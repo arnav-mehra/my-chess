@@ -1,0 +1,202 @@
+To do:
+1. Figure out this pointer and misalignment shit
+2. Create move class
+3. Include castling and en passant
+4. Get good at programming
+
+
+
+// char boardChar[64] = {
+//   'r',' ',' ',' ',' ',' ',' ',' ',
+//   ' ',' ',' ',' ','k','p','p',' ',
+//   'p',' ',' ','p','b',' ',' ',' ',
+//   'R','p','p',' ',' ',' ',' ',' ',
+//   ' ',' ',' ',' ','n',' ',' ',' ',
+//   ' ',' ',' ',' ','N','P','p',' ',
+//   'P','P','P',' ','P',' ','P','r',
+//   ' ',' ',' ',' ','K','B',' ','R'
+// };
+// char boardChar[64] = {
+//   'r','n','b','q','k','b','n','r',
+//   'p','p','p','p','p','p','p','p',
+//   ' ',' ',' ',' ',' ',' ',' ',' ',
+//   ' ',' ',' ',' ',' ',' ',' ',' ',
+//   ' ',' ',' ',' ',' ',' ',' ',' ',
+//   ' ',' ',' ',' ',' ',' ',' ',' ',
+//   'P','P','P','P','P','P','P','P',
+//   'R','N','B','Q','K','B','N','R'
+// }
+// char boardChar[64] = { //a mid game
+//   'r',' ',' ','q',' ','r','k',' ',
+//   ' ','p',' ','b',' ','p','p','p',
+//   'p',' ','n',' ','p','n',' ',' ',
+//   ' ',' ',' ','p',' ',' ',' ',' ',
+//   ' ','P',' ',' ',' ','B',' ',' ',
+//   'P',' ','N','Q',' ','N',' ','P',
+//   ' ','P',' ',' ',' ','P','P',' ',
+//   ' ',' ',' ','R','R',' ','K',' '
+// }
+
+
+
+
+// int perft(int depth, bool turn, Board b) {
+//   int nodes = 0;
+//   if (depth == 0) { return 1; }
+//   vector<vector<int>> moves = b.moveGen(turn);
+//   for (int i=0; i<moves.size(); i++) {
+//     int piece = moves[i][0], capture = moves[i][3];
+//     uint64_t fromVal = 1ULL << moves[i][1], toVal = 1ULL << moves[i][2];
+    
+//     b.move(piece, fromVal, toVal, capture, turn);
+//     nodes += perft(depth-1, !turn, b);
+//     if (capture != -1) { captures++; }
+//     b.unmove(piece, fromVal, toVal, capture, turn);
+//   }
+//   return nodes;
+// }
+
+// int miniMax(int depth, bool turn, Board b) {
+//   if (depth == 0) { return b.evaluate()*(turn? 1 : -1); }
+//   vector<vector<int>> moves = b.moveGen(turn);
+
+//   int max = -100000;
+//   for (int i=0; i<moves.size(); i++) {
+//     int piece = moves[i][0], capture = moves[i][3];
+//     uint64_t fromVal = 1ULL << moves[i][1], toVal = 1ULL << moves[i][2];
+//     b.move(piece, fromVal, toVal, capture, turn);
+
+//     int score = -miniMax(depth-1, !turn, b);
+//     if (score > max) {
+//       max = score;
+//     }
+
+//     b.unmove(piece, fromVal, toVal, capture, turn);
+//   }
+//   return max;
+// }
+
+
+
+
+  // //failing at making it interactive :(
+  // cout << '\n';
+  // while (1) { //f life
+  //   vector<int> bestMove = alphaBetaMiniMax(7, turn, b);
+  //   b.move(bestMove[0], bestMove[1], bestMove[2], turn);
+  //   b.printBoard();
+  //   int f, t;
+  //   int piece = -1;
+  //   while (piece != -1) {
+  //     cin >> f >> t;
+  //     cout << '\n';
+  //     piece = b.getPiece(f);
+  //   }
+  //   b.move(piece, f, t, !turn);
+  //   cout << '\n';
+  // }
+
+
+
+
+
+
+
+    bool isCheck (bool turn) {
+      uint64_t combined = black | white;
+
+      int cKing = turn? white & kings : black & kings;
+      int currSquare = LOG2(cKing);
+
+      uint64_t kingDiagonals = Bmagic(currSquare, combined);
+      uint64_t kingStraights = Rmagic(currSquare, combined);
+      uint64_t diagonalAttacks = (turn? black : white) & (queens | bishops);
+      if (kingDiagonals & diagonalAttacks != 0) {return true;}
+      uint64_t straightAttacks = (turn? black : white) & (queens | rooks);
+      if (kingStraights & straightAttacks != 0) {return true;}
+
+      uint64_t knightAttacks = (turn? black : white) & knights & knightMoves[currSquare];
+      if (knightAttacks != 0) {return true;}
+      uint64_t pawnAttacks = (turn? black : white) & pawns & (turn? wPawnAttacks[currSquare] : bPawnAttacks[currSquare]);
+      if (pawnAttacks != 0) {return true;}
+
+      return false;
+    }
+    uint64_t getPinnedPieces (bool turn) {
+      uint64_t pins = 0;
+      int cKing = turn? white & kings : black & kings;
+      int currSquare = LOG2(cKing);
+
+      uint64_t kingDiagonals = Bmagic(currSquare, turn? black : white);
+      uint64_t kingStraights = Rmagic(currSquare, turn? black : white);
+      uint64_t diagonalAttacks = (turn? black : white) & (queens | bishops);
+      if (kingDiagonals & diagonalAttacks != 0) {
+        pins |= kingDiagonals & (turn? white : black);
+      }
+      uint64_t straightAttacks = (turn? black : white) & (queens | rooks);
+      if (kingStraights & straightAttacks != 0) {
+        pins |= kingStraights & (turn? white : black);
+      }
+
+      return pins;
+    }
+    
+
+
+
+int alphaBetaMax(int alpha, int beta, int depth, Board b);
+int alphaBetaMin(int alpha, int beta, int depth, Board b);
+int alphaBetaMax(int alpha, int beta, int depth, Board b) {
+  if ( depth == 0 ) return b.evaluate();
+  vector<vector<int>> moves = b.moveGen(true);
+
+  for (int i=0; i<moves.size(); i++) {
+    int piece = moves[i][0], capture = moves[i][3];
+    uint64_t fromVal = 1ULL << moves[i][1], toVal = 1ULL << moves[i][2];
+
+    b.move(piece, fromVal, toVal, capture, true);
+    int score = alphaBetaMin( alpha, beta, depth - 1, b);
+    if( score >= beta )
+      return beta;   // fail hard beta-cutoff
+    if( score > alpha )
+      alpha = score; // alpha acts like max in MiniMax
+    b.unmove(piece, fromVal, toVal, capture, true);
+  }
+  return alpha;
+}
+int alphaBetaMin(int alpha, int beta, int depth, Board b) {
+  if ( depth == 0 ) return -b.evaluate();
+  vector<vector<int>> moves = b.moveGen(false);
+  for (int i=0; i<moves.size(); i++) {
+    int piece = moves[i][0], capture = moves[i][3];
+    uint64_t fromVal = 1ULL << moves[i][1], toVal = 1ULL << moves[i][2];
+
+    b.move(piece, fromVal, toVal, capture, false);
+    int score = alphaBetaMax( alpha, beta, depth - 1, b);
+    if( score <= alpha )
+      return alpha; // fail hard alpha-cutoff
+    if( score < beta )
+      beta = score; // beta acts like min in MiniMax
+    b.unmove(piece, fromVal, toVal, capture, false);
+  }
+  return beta;
+}
+vector<vector<int>> alphaBetaMiniMax(int depth, bool turn, Board b) {
+  vector<vector<int>> moves = b.moveGen(turn);
+  int alphaIndex = 0;
+  int alpha = turn? -100000: 100000;
+
+  for (int i=0; i<moves.size(); i++) {
+    int piece = moves[i][0], capture = moves[i][3];
+    uint64_t fromVal = 1ULL << moves[i][1], toVal = 1ULL << moves[i][2];
+
+    b.move(piece, fromVal, toVal, capture, turn);
+    int score = turn? -alphaBetaMin(alpha, 100000, depth-1, b) : alphaBetaMax( -100000, alpha, depth - 1, b);
+    if(turn? score > alpha : score < alpha) {
+      alpha = score;
+      alphaIndex = i;
+    }
+    b.unmove(piece, fromVal, toVal, capture, turn);
+  }
+  return {moves[alphaIndex], {-alpha}};
+}
