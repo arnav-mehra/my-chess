@@ -3,6 +3,7 @@
 #include "search.h"
 #include "printer.h"
 #include <vector>
+#include <math.h>
 #include <iostream>
 #include <cstdint>
 #include <memory>
@@ -26,8 +27,6 @@ int perft(int depth, bool turn, Board b) {
 }
 int quiesce (int alpha, int beta, bool turn, Board b) {
   int stand_pat = turn? b.evaluate() : -b.evaluate();
-  nodes++;
-  return stand_pat;
   if( stand_pat >= beta ) {
     nodes++;
     return beta;
@@ -60,6 +59,9 @@ int alphaBetaNegaMax(int alpha, int beta, int depth, int turn, Board b) {
   if (depth == 0) { return quiesce(alpha, beta, turn, b); }
 
   vector<vector<int>> moves = b.moveGen(turn);
+  if (moves.size() == 0) {
+    return 0;
+  }
   for (int i=0; i<moves.size(); i++) {
     int piece = moves[i][0], capture = moves[i][3];
     uint64_t fromVal = 1ULL << moves[i][1], toVal = 1ULL << moves[i][2];
@@ -101,18 +103,26 @@ int main() {
 	initmagicmoves();
 
   Board b;
-  b.setBoardFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+  // b.initializeBoard();
+  b.setBoardFen(
+    // "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+    "8/R4pk1/6p1/3KN2p/7P/8/3r2P1/8"
+  );
+  b.printBoard();
   bool turn = true;
-  int depth = 5;
+  int depth = 4;
 
-  Search s;
-  s.bPtr = make_shared<Board>(b);
   
+  // printMoves(b.moveGen(true));
   vector<vector<int>> bestMoveAndEval = abNegaMaxCall(depth, turn, b);
+  // vector<vector<int>> bestMoveAndEval2 = s.abNegaMaxCall(depth, turn);
+
   printMove(bestMoveAndEval[0]);
-  quirkyStatement(bestMoveAndEval[1][0]);
+  // printMove(bestMoveAndEval2[0]);
+  // quirkyStatement(bestMoveAndEval[1][0]);
 
   cout << '\n' << "Nodes Searched: " << nodes << '\n';
   cout << "Evaluation: " << bestMoveAndEval[1][0]/100.0 << '\n';
+  // printNumGrid();
 }
 

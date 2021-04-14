@@ -6,26 +6,16 @@
 #include <vector>
 #include <iostream>
 #include <cstdint>
+#define LOG2(X) ((unsigned) (8*sizeof (unsigned long long) - __builtin_clzll((X)) - 1))
 using namespace std;
 
-#define LOG2(X) ((unsigned) (8*sizeof (unsigned long long) - __builtin_clzll((X)) - 1))
-
-//queen promo: -4
-//rook promo: -3
-//bishop promo: -2
-//knight promo: -1
-//pawn: 0
-//knight: 1
-//bishop: 2
-//rook: 3
-//queen: 4
-//king: 5
 
 
 
 class Board { public:
 
   uint64_t white, black, pawns, knights, bishops, rooks, queens, kings, unmoved, enpassant;
+  bool whiteHasCastled = false, blackHasCastled = false;
 
 
   vector<vector<int>> moveGen (bool turn) {
@@ -33,38 +23,31 @@ class Board { public:
     uint64_t combined  = black | white;
     uint64_t empty  = ~combined;
     vector<vector<int>> moves;
-    bool checked = false;
-
+    
     //king positions
     uint64_t cKing = turn? getK() : getk();
     if (cKing == 0) { return {}; }
-    if (checked) {
-      int currSquare = LOG2(cKing);
-      uint64_t attacks = kingMoves[currSquare] & getColor(!turn);
-      uint64_t openMoves = kingMoves[currSquare] & empty;
-      while (attacks != 0) {
-        int toSquare = bitScanForward(attacks);
-        int capture = getPiece(toSquare);
-        if (capture == -1) { cout << "kings\n"; }
-        moves.push_back({5, currSquare, toSquare, capture});
-        attacks &= attacks-1;
-      }
-      while (openMoves != 0) {
-        int toSquare = bitScanForward(openMoves);
-        moves.push_back({5, currSquare, toSquare, -1});
-        openMoves &= openMoves-1;
-      }
-    }
 
-
+    // castling
+    // if ((turn && !whiteHasCastled) || (!turn && !blackHasCastled)) {
+    //   kings -= cKing; empty+=cKing; if (turn) { white -= cKing; } else { black -= cKing; }
+    //   int kingInitSq = turn? 60:4;
+    //   if (canLeftCastle(turn) && (empty & leftCastleChecks[turn])) {
+    //     moves.push_back({6, kingInitSq, kingInitSq-2, -1});
+    //   }
+    //   if (canRightCastle(turn) && (empty & rightCastleChecks[turn])) {
+    //     moves.push_back({7, kingInitSq, kingInitSq+2, -1});
+    //   }
+    //   kings += cKing; empty-=cKing; if (turn) { white += cKing; } else { black += cKing; }
+    // }
+    
     //piece positions
-    uint64_t cPawns = turn? getP() : getp();
+    uint64_t cPawns = turn? getP() : getp(), 
+      cKnights = turn? getN() : getn(), cBishops = turn? getB() : getb(), 
+      cRooks = turn? getR() : getr(), cQueen = turn? getQ() : getq();
     uint64_t up1 = (turn? cPawns >> 8 : cPawns << 8) & empty;
     uint64_t up2 = (turn? up1 >> 8 & OgPawnPos : up1 << 8 & OgPawnPos2) & empty;
     
-    uint64_t cKnights = turn? getN() : getn(), cBishops = turn? getB() : getb(), 
-    cRooks = turn? getR() : getr(), cQueen = turn? getQ() : getq();
-
     //pawn attacks/captures
     while (cPawns != 0) { 
       int currSquare = bitScanForward(cPawns);
@@ -72,7 +55,6 @@ class Board { public:
       while (attacks != 0) {
         int toSquare = bitScanForward(attacks);
         int capture = getPiece(toSquare);
-        if (capture == -1) { cout << "pawns\n"; }
         moves.push_back({0, currSquare, toSquare, capture});
         attacks &= attacks-1;
       }
@@ -95,7 +77,6 @@ class Board { public:
       while (attacks != 0) {
         int toSquare = bitScanForward(attacks);
         int capture = getPiece(toSquare);
-        if (capture == -1) { cout << "knights\n"; }
         moves.push_back({1, currSquare, toSquare, capture});
         attacks &= attacks-1;
       }
@@ -113,8 +94,8 @@ class Board { public:
       int fromSquare = turn? toSquare+8 : toSquare-8;
       if (turn? toSquare < 8 : toSquare > 55) {
         moves.push_back({-4, fromSquare, toSquare, -1});
-        moves.push_back({-3, fromSquare, toSquare, -1});
-        moves.push_back({-2, fromSquare, toSquare, -1});
+        // moves.push_back({-3, fromSquare, toSquare, -1});
+        // moves.push_back({-2, fromSquare, toSquare, -1});
         moves.push_back({-1, fromSquare, toSquare, -1});
       } else {
         moves.push_back({0, fromSquare, toSquare, -1});
@@ -131,7 +112,6 @@ class Board { public:
       while (attacks != 0) {
         int toSquare = bitScanForward(attacks);
         int capture = getPiece(toSquare);
-        if (capture == -1) { cout << "bishops\n"; }
         moves.push_back({2, currSquare, toSquare, capture});
         attacks &= attacks-1;
       }
@@ -152,7 +132,6 @@ class Board { public:
       while (attacks != 0) {
         int toSquare = bitScanForward(attacks);
         int capture = getPiece(toSquare);
-        if (capture == -1) { cout << "queens\n"; }
         moves.push_back({4, currSquare, toSquare, capture});
         attacks &= attacks-1;
       }
@@ -173,7 +152,6 @@ class Board { public:
       while (attacks != 0) {
         int toSquare = bitScanForward(attacks);
         int capture = getPiece(toSquare);
-        if (capture == -1) { cout << "rooks\n"; }
         moves.push_back({3, currSquare, toSquare, capture});
         attacks &= attacks-1;
       }
@@ -186,14 +164,13 @@ class Board { public:
     }
 
     //king moves, at end for ordering
-    if (!checked) {
+    if (cKing) {
       int currSquare = LOG2(cKing);
       uint64_t attacks = kingMoves[currSquare] & getColor(!turn);
       uint64_t openMoves = kingMoves[currSquare] & empty;
       while (attacks != 0) {
         int toSquare = bitScanForward(attacks);
         int capture = getPiece(toSquare);
-        if (capture == -1) { cout << "kings\n"; }
         moves.push_back({5, currSquare, toSquare, capture});
         attacks &= attacks-1;
       }
@@ -286,6 +263,53 @@ class Board { public:
     
     return orderMoves(moves);
   }
+  bool canRightCastle (bool turn) {
+    if ((rightCastleEmpty[turn] & ~(black | white)) == rightCastleEmpty[turn]) {
+      if ((unmoved & rightCastleUnmoved[turn]) == rightCastleUnmoved[turn]) {
+        uint64_t checks = rightCastleChecks[turn];
+        while (checks != 0) {
+          int currSq = bitScanForward(checks);
+          if (isCheck(turn, currSq)) { 
+            return false;
+          }
+          checks &= checks-1;
+        }
+        return true;
+      } else { return false; }
+    } else { return false; }
+  }
+  bool canLeftCastle (bool turn) {
+    if ((leftCastleEmpty[turn] & ~(black | white)) == leftCastleEmpty[turn]) {
+      if ((unmoved & leftCastleUnmoved[turn]) == leftCastleUnmoved[turn]) {
+        uint64_t checks = leftCastleChecks[turn];
+        while (checks != 0) {
+          int currSq = bitScanForward(checks);
+          if (isCheck(turn, currSq)) {
+            return false;
+          }
+          checks &= checks-1;
+        }
+        return true;
+      } else { return false; }
+    } else { return false; }
+  }
+  bool isCheck (bool turn, int currSquare) {
+    uint64_t combined = black | white;
+
+    uint64_t kingDiagonals = Bmagic(currSquare, combined);
+    uint64_t kingStraights = Rmagic(currSquare, combined);
+    uint64_t diagonalAttacks = getColor(!turn) & (queens | bishops);
+    if (kingDiagonals & diagonalAttacks != 0) {return true;}
+    uint64_t straightAttacks = getColor(!turn) & (queens | rooks);
+    if (kingStraights & straightAttacks != 0) {return true;}
+
+    uint64_t knightAttacks = getColor(!turn) & knights & knightMoves[currSquare];
+    if (knightAttacks != 0) {return true;}
+    uint64_t pawnAttacks = getColor(!turn) & pawns & (turn? wPawnAttacks[currSquare] : bPawnAttacks[currSquare]);
+    if (pawnAttacks != 0) {return true;}
+
+    return false;
+  }
 
 
   void move (int piece, uint64_t fromVal, uint64_t toVal, int capture, bool turn) {
@@ -293,9 +317,7 @@ class Board { public:
 
     //remove from unmoved, clear enpassantable
     enpassant = 0;
-    if (unmoved & fromVal != 0) {
-      unmoved -= fromVal;
-    }
+    unmoved -= fromVal;
 
     //if capture, remove captured piece on color bitboard
     if (capture != -1) {
@@ -311,6 +333,7 @@ class Board { public:
     }
     
     //move piece
+    uint64_t rookShift;
     if (turn) { white += deltaVal; } else { black += deltaVal; }
     switch (piece) {
       case 0: pawns += deltaVal; break;
@@ -319,6 +342,18 @@ class Board { public:
       case 3: rooks += deltaVal; break;
       case 4: queens += deltaVal; break;
       case 5: kings += deltaVal; break;
+      case 6: //left castle
+        kings += deltaVal; 
+        rookShift = (fromVal >> 1) - (toVal >> 2);
+        rooks += rookShift; if (turn) { white += rookShift; } else { black += rookShift; }
+        if (turn) { whiteHasCastled = true; } else { blackHasCastled = true; }
+        break;
+      case 7: //right castle
+        kings += deltaVal;
+        rookShift = (fromVal << 1) - (toVal << 1);
+        rooks += rookShift; if (turn) { white += rookShift; } else { black += rookShift; }
+        if (turn) { whiteHasCastled = true; } else { blackHasCastled = true; }
+        break;
       case -1: pawns -= fromVal; knights += toVal; break;
       case -2: pawns -= fromVal; bishops += toVal; break;
       case -3: pawns -= fromVal; rooks += toVal; break;
@@ -327,6 +362,9 @@ class Board { public:
   }
   void unmove (int piece, uint64_t fromVal, uint64_t toVal, int capture, bool turn) {
     signed long long deltaVal = fromVal - toVal;
+    
+    unmoved += fromVal;
+    
     //move piece back
     if (turn) { white += deltaVal; } else { black += deltaVal; }
     switch (piece) {
@@ -336,6 +374,14 @@ class Board { public:
       case 3: rooks += deltaVal; break;
       case 4: queens += deltaVal; break;
       case 5: kings += deltaVal; break;
+      case 6: 
+        kings += deltaVal; rooks += toVal >> 2 - fromVal >> 1; 
+        if (turn) { whiteHasCastled = false; } else { blackHasCastled = false; }
+        break;
+      case 7: 
+        kings += deltaVal; rooks += toVal << 1 - fromVal << 1;
+        if (turn) { whiteHasCastled = false; } else { blackHasCastled = false; }
+        break;
       case -1: pawns += fromVal; knights -= toVal; break;
       case -2: pawns += fromVal; bishops -= toVal; break;
       case -3: pawns += fromVal; rooks -= toVal; break;
@@ -357,6 +403,9 @@ class Board { public:
   }
 
 
+
+
+
   int getPiece(int currSq) {
     uint64_t currVal = 1ULL << currSq;
     if (pawns & currVal) { return 0; } 
@@ -367,19 +416,22 @@ class Board { public:
     else if (kings & currVal) { return 5; } 
     else { cout << "BAD CODE\n"; return -1; }
   }
-  uint64_t getP() { return white & pawns;   }
-  uint64_t getp() { return black & pawns;   }
-  uint64_t getN() { return white & knights; }
-  uint64_t getn() { return black & knights; }
-  uint64_t getB() { return white & bishops; }
-  uint64_t getb() { return black & bishops; }
-  uint64_t getR() { return white & rooks;   }
-  uint64_t getr() { return black & rooks;   }
-  uint64_t getQ() { return white & queens;  }
-  uint64_t getq() { return black & queens;  }
-  uint64_t getK() { return white & kings;   }
-  uint64_t getk() { return black & kings;   }
-  uint64_t getColor (bool turn) { if (turn) { return white; } else { return black; }}
+  inline uint64_t getP() { return white & pawns;   }
+  inline uint64_t getp() { return black & pawns;   }
+  inline uint64_t getN() { return white & knights; }
+  inline uint64_t getn() { return black & knights; }
+  inline uint64_t getB() { return white & bishops; }
+  inline uint64_t getb() { return black & bishops; }
+  inline uint64_t getR() { return white & rooks;   }
+  inline uint64_t getr() { return black & rooks;   }
+  inline uint64_t getQ() { return white & queens;  }
+  inline uint64_t getq() { return black & queens;  }
+  inline uint64_t getK() { return white & kings;   }
+  inline uint64_t getk() { return black & kings;   }
+  inline uint64_t getColor (bool turn) { if (turn) { return white; } else { return black; }}
+
+
+
 
 
   void initializeBoard() {
@@ -471,6 +523,9 @@ class Board { public:
       kings   = UINT64_C(0);
       unmoved = UINT64_C(0);
     }
+  
+
+  
   int evaluate () {
     //material eval
     uint64_t wKing = getK(), bKing = getk();
@@ -512,6 +567,7 @@ class Board { public:
 
     return materialEval + positionEval;
   }
+  
 };
 
 #endif

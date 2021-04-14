@@ -1,8 +1,7 @@
-To do:
-1. Figure out this pointer and misalignment shit
-2. Create move class
+1. Create move class
+2. Faster alpha-beta function
 3. Include castling and en passant
-4. Get good at programming
+4. Actual move ordering
 
 
 

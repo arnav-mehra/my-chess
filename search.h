@@ -13,41 +13,41 @@ class Search {
 
     public:
 
-        shared_ptr<Board> bPtr;
+        Board b;
         int nodes=0;
 
         vector<vector<int>> abNegaMaxCall(int depth, int turn) {
             int alpha = -100000, beta = 100000;
             int alphaIndex = 0;
 
-            vector<vector<int>> moves = bPtr -> moveGen(turn);
+            vector<vector<int>> moves = b.moveGen(turn);
             for (int i=0; i<moves.size(); i++) {
                 int piece = moves[i][0], capture = moves[i][3];
                 uint64_t fromVal = 1ULL << moves[i][1], toVal = 1ULL << moves[i][2];
                 
-                bPtr -> move(piece, fromVal, toVal, capture, turn);
+                b.move(piece, fromVal, toVal, capture, turn);
                 int score = -alphaBetaNegaMax(-beta, -alpha, depth-1, !turn);
                 if (score > alpha) {
                     alpha = score;
                     alphaIndex = i;
                 }
-                bPtr -> unmove(piece, fromVal, toVal, capture, turn);
+                b.unmove(piece, fromVal, toVal, capture, turn);
             }
             return {moves[alphaIndex], {alpha}};
         }
         int evaluate () {
 
             //material eval
-            uint64_t wKing = bPtr -> getK(), bKing = bPtr -> getk();
+            uint64_t wKing = b.getK(), bKing = b.getk();
             int kingDiff = __builtin_popcountll(wKing) - __builtin_popcountll(bKing);
             if (kingDiff != 0) {
                 return 100000*kingDiff;
             }
-            uint64_t wKnights = bPtr -> getN(), bKnights = bPtr -> getn();
-            uint64_t wBishops = bPtr -> getB(), bBishops = bPtr -> getb();
-            uint64_t wRooks   = bPtr -> getR(), bRooks   = bPtr -> getr();
-            uint64_t wQueens  = bPtr -> getQ(), bQueens  = bPtr -> getq();
-            uint64_t wPawns   = bPtr -> getP(), bPawns   = bPtr -> getp();
+            uint64_t wKnights = b.getN(), bKnights = b.getn();
+            uint64_t wBishops = b.getB(), bBishops = b.getb();
+            uint64_t wRooks   = b.getR(), bRooks   = b.getr();
+            uint64_t wQueens  = b.getQ(), bQueens  = b.getq();
+            uint64_t wPawns   = b.getP(), bPawns   = b.getp();
 
             int knightDiff = __builtin_popcountll(wKnights) - __builtin_popcountll(bKnights);
             int bishopDiff = __builtin_popcountll(wBishops) - __builtin_popcountll(bBishops);
@@ -57,10 +57,10 @@ class Search {
             int materialEval = 100*pawnDiff + 305*knightDiff + 333*bishopDiff + 563*rookDiff + 950*queenDiff;
 
             //positional eval
-            int wPieces = __builtin_popcountll(bPtr -> getColor(true));
-            int bPieces = __builtin_popcountll(bPtr -> getColor(false));
+            int wPieces = __builtin_popcountll(b.getColor(true));
+            int bPieces = __builtin_popcountll(b.getColor(false));
             int positionEval = 0;
-            bool isEndGame = wPieces + bPieces < 8 || (bPtr -> getQ()==0 && bPtr -> getq()==0 && wPieces + bPieces < 16);
+            bool isEndGame = wPieces + bPieces < 8 || (b.getQ()==0 && b.getq()==0 && wPieces + bPieces < 16);
 
             while (wPawns != 0)   { positionEval += pawnEvalTable   [isEndGame][bitScanForward(wPawns)];      wPawns &= wPawns-1; }
             while (bPawns != 0)   { positionEval -= pawnEvalTable   [isEndGame][64-bitScanForward(bPawns)];   bPawns &= bPawns-1; }
@@ -93,14 +93,14 @@ class Search {
                 alpha = stand_pat;
             }
 
-            vector<vector<int>> moves = bPtr -> captureGen(turn);
+            vector<vector<int>> moves = b.captureGen(turn);
             for (int i=0; i<moves.size(); i++)  {
                 int piece = moves[i][0], capture = moves[i][3];
                 uint64_t fromVal = 1ULL << moves[i][1], toVal = 1ULL << moves[i][2];
 
-                bPtr -> move(piece, fromVal, toVal, capture, turn);
+                b.move(piece, fromVal, toVal, capture, turn);
                 int score = -quiesce(-beta, -alpha, !turn);
-                bPtr -> unmove(piece, fromVal, toVal, capture, turn);
+                b.unmove(piece, fromVal, toVal, capture, turn);
 
                 if (score >= beta) {
                     nodes++;
@@ -118,12 +118,12 @@ class Search {
                 return quiesce(alpha, beta, turn);
             }
 
-            vector<vector<int>> moves = bPtr -> moveGen(turn);
+            vector<vector<int>> moves = b.moveGen(turn);
             for (int i=0; i<moves.size(); i++) {
                 int piece = moves[i][0], capture = moves[i][3];
                 uint64_t fromVal = 1ULL << moves[i][1], toVal = 1ULL << moves[i][2];
                 
-                bPtr -> move(piece, fromVal, toVal, capture, turn);
+                b.move(piece, fromVal, toVal, capture, turn);
                 int score = -alphaBetaNegaMax(-beta, -alpha, depth-1, !turn);
                 if (score >= beta) {
                     return beta;
@@ -131,7 +131,7 @@ class Search {
                 if (score > alpha) {
                     alpha = score;
                 }
-                bPtr -> unmove(piece, fromVal, toVal, capture, turn);
+                b.unmove(piece, fromVal, toVal, capture, turn);
             }
             return alpha;
         }
