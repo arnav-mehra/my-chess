@@ -1,6 +1,3 @@
-#include <vector>
-#include <iostream>
-#include <cstdint>
 using namespace std;
 
 void printGrid (uint64_t num) {
@@ -33,19 +30,20 @@ void printTable(uint64_t table[64][4096]) {
   }
 }
 
-void printMoves(vector<vector<int>> moves) {
-
+void printMoves(vector<Move> moves) {
   for (int i=0; i<moves.size(); i++) {
-    switch (moves[i][0]) {
+    switch (moves[i].piece) {
       case 0: cout << "P"; break;
       case 1: cout << "N"; break;
       case 2: cout << "B"; break;
       case 3: cout << "R"; break;
       case 4: cout << "Q"; break;
       case 5: cout << "K"; break;
+      case 6: cout << "O"; break;
+      case 7: cout << "O"; break;
     }
-    cout << ": (" << moves[i][1] << ", " << moves[i][2] << ") ";
-    switch (moves[i][3]) {
+    cout << ": (" << (int)(moves[i].fromSq) << ", " << (int)(moves[i].toSq) << ") ";
+    switch (moves[i].capture) {
       case 0: cout << "P"; break;
       case 1: cout << "N"; break;
       case 2: cout << "B"; break;
@@ -57,23 +55,22 @@ void printMoves(vector<vector<int>> moves) {
   }
   cout << " Length: " << moves.size() << '\n';
 }
-void printMove(vector<int> move) {
-  char pieceChars[] = {'P', 'N', 'B', 'R', 'Q', 'K'};
+
+void printMove(Move &m) {
+  char pieceChars[] = {'P', 'N', 'B', 'R', 'Q', 'K', 'O', 'O'};
   char letters[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
 
-  char p = pieceChars[move[0]];
-  int f = move[1], t = move[2];
-  // cout << p << ": " << letters[f%8] << 8-f/8 << ", " << letters[t%8] << 8-t/8 << '\n';
-  if (move[3] != -1) {
+  char p = pieceChars[m.piece];
+  int f = m.fromSq, t = m.toSq;
+
+  if (m.capture != -1) {
     cout << p << 'x' << letters[t%8] << 8-t/8 << '\n';
   } else {
     cout << p << letters[t%8] << 8-t/8 << '\n';
   }
 }
-void printMovePure(vector<int> move) {
-  int p = move[0], capture = move[3];
-  int f = move[1], t = move[2];
-  cout << p << ", " << f << ", " << t << ", " << capture << '\n';
+void printMovePure(Move move) {
+  cout << move.piece << ", " << move.fromSq << ", " << move.toSq << ", " << move.capture << '\n';
 }
 
 void quirkyStatement(int eval) {
