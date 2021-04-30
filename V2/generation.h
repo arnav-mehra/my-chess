@@ -1,3 +1,5 @@
+#define combined pieces[14]
+#define empty pieces[15]
 using namespace std;
 
 
@@ -5,27 +7,23 @@ using namespace std;
 
 void Board::moveGen (vector<Move> &moves) {
     
-    //occupancy
-    uint64_t combined = pieces[Piece::BLACK] ^ pieces[Piece::WHITE];
-    uint64_t empty = ~combined;
-    
     //king positions
     uint64_t cKing = turn? getK() : getk();
     if (cKing == 0) { return; }
 
     // castling
     if (turn && wKingSqMoves==0) {
-        if (wLRookSqMoves==0 && canLeftCastle(empty + cKing)) {
+        if (wLRookSqMoves==0 && canLeftCastle(empty | cKing)) {
             moves.push_back(Move(6, 60, 58));
         }
-        if (wRRookSqMoves==0 && canRightCastle(empty + cKing)) {
+        if (wRRookSqMoves==0 && canRightCastle(empty | cKing)) {
             moves.push_back(Move(7, 60, 62));
         }
     } else if (!turn && bKingSqMoves==0) {
-        if (bLRookSqMoves==0 && canLeftCastle(empty + cKing)) {
+        if (bLRookSqMoves==0 && canLeftCastle(empty | cKing)) {
             moves.push_back(Move(6, 4, 2));
         }
-        if (bRRookSqMoves==0 && canRightCastle(empty + cKing)) {
+        if (bRRookSqMoves==0 && canRightCastle(empty | cKing)) {
             moves.push_back(Move(7, 4, 6));
         }
     }
@@ -88,7 +86,7 @@ void Board::moveGen (vector<Move> &moves) {
         up1 &= up1-1;
     }
 
-    //bishop moves, unchecked
+    //bishop moves
     while (cBishops != 0) {
         uint64_t bishopMoves = Bmagic(bitScanForward(cBishops), combined);
         uint64_t attacks = bishopMoves & getNotTurn();
@@ -104,7 +102,7 @@ void Board::moveGen (vector<Move> &moves) {
         cBishops &= cBishops-1;
     }
 
-    //queen moves, unchecked
+    //queen moves
     while (cQueen != 0) {
         uint8_t currSquare = bitScanForward(cQueen);
         uint64_t queenMoves = Bmagic(currSquare, combined) ^ Rmagic(currSquare, combined);
@@ -158,9 +156,6 @@ void Board::moveGen (vector<Move> &moves) {
 }
 
 void Board::captureGen (vector<Move> &moves) {
-
-    //occupancy
-    uint64_t combined = pieces[Piece::BLACK] ^ pieces[Piece::WHITE];
     
     //king captures, if king was captured, give 0 moves
     uint64_t cKing = turn? getK() : getk();
@@ -250,23 +245,23 @@ void Board::captureGen (vector<Move> &moves) {
 
 //castling conditions
 
-bool Board::canRightCastle (uint64_t empty) {
-    if ((getRightCastleChecks(turn) & empty) == getRightCastleChecks(turn)) {
+bool Board::canRightCastle (uint64_t UnoccWOKing) {
+    if ((getRightCastleChecks(turn) & UnoccWOKing) == getRightCastleChecks(turn)) {
         uint64_t checks = getRightCastleChecks(turn);
         while (checks != 0) {
             uint8_t currSq = bitScanForward(checks);
-            if (isCheck(currSq, ~empty)) { return false; }
+            if (isCheck(currSq, ~UnoccWOKing)) { return false; }
             checks &= checks-1;
         }
         return true;
     } else { return false; }
 }
-bool Board::canLeftCastle (uint64_t empty) {
-    if ((getLeftCastleChecks(turn) & empty) == getLeftCastleChecks(turn)) {
+bool Board::canLeftCastle (uint64_t UnoccWOKing) {
+    if ((getLeftCastleChecks(turn) & UnoccWOKing) == getLeftCastleChecks(turn)) {
         uint64_t checks = getLeftCastleChecks(turn);
         while (checks != 0) {
             uint8_t currSq = bitScanForward(checks);
-            if (isCheck(currSq, ~empty)) { return false; }
+            if (isCheck(currSq, ~UnoccWOKing)) { return false; }
             checks &= checks-1;
         }
         return true;
@@ -274,22 +269,21 @@ bool Board::canLeftCastle (uint64_t empty) {
 }
 
 
-bool Board::isCheck (uint8_t currSquare, uint64_t combined) {
+bool Board::isCheck (uint8_t currSquare, uint64_t OccWOKing) {
     if (currSquare == 65) { currSquare = bitScanForward(turn? getK() : getk()); }
 
-    uint64_t diagonalAttackers = (turn? getq() ^ getb() : getQ() ^ getB()) & Bmagic(currSquare, combined);
-    if (diagonalAttackers != 0) { return true;}
-    uint64_t straightAttackers = (turn? getq() ^ getr() : getQ() ^ getR()) & Rmagic(currSquare, combined);
-    if (straightAttackers != 0) { return true;}
+    uint64_t diagonalAttackers = (turn? getq() ^ getb() : getQ() ^ getB()) & Bmagic(currSquare, OccWOKing);
+    if (diagonalAttackers != 0) { return true; }
+    uint64_t straightAttackers = (turn? getq() ^ getr() : getQ() ^ getR()) & Rmagic(currSquare, OccWOKing);
+    if (straightAttackers != 0) { return true; }
 
     uint64_t knightAttackers = (turn? getn() : getN()) & knightMoves[currSquare];
-    if (knightAttackers != 0) { return true;}
+    if (knightAttackers != 0) { return true; }
     uint64_t pawnAttackers = (turn? getp() : getP()) & getPawnAttacks(turn, currSquare);
     return pawnAttackers != 0;
 }
 bool Board::isCheck (uint8_t currSquare) {
     if (currSquare == 65) { currSquare = bitScanForward(turn? getK() : getk()); }
-    uint64_t combined = pieces[Piece::BLACK] ^ pieces[Piece::WHITE];
 
     uint64_t diagonalAttackers = (turn? getq() ^ getb() : getQ() ^ getB()) & Bmagic(currSquare, combined);
     if (diagonalAttackers != 0) { return true;}

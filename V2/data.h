@@ -22,7 +22,7 @@ map<array<uint64_t,7>, int> whiteZKeyTable;
 
 
 //precomputed move data
-uint64_t const kingMoves[64] = {
+static const uint64_t kingMoves[64] = {
   770ULL, 1797ULL, 3594ULL, 7188ULL, 14376ULL, 28752ULL, 57504ULL, 49216ULL, 
   197123ULL, 460039ULL, 920078ULL, 1840156ULL, 3680312ULL, 7360624ULL, 14721248ULL, 12599488ULL, 
   50463488ULL, 117769984ULL, 235539968ULL, 471079936ULL, 942159872ULL, 1884319744ULL, 3768639488ULL, 3225468928ULL, 
@@ -32,7 +32,7 @@ uint64_t const kingMoves[64] = {
   216739030602088448ULL, 505818229730443264ULL, 1011636459460886528ULL, 2023272918921773056ULL, 4046545837843546112ULL, 8093091675687092224ULL, 16186183351374184448ULL, 13853283560024178688ULL, 
   144959613005987840ULL, 362258295026614272ULL, 724516590053228544ULL, 1449033180106457088ULL, 2898066360212914176ULL, 5796132720425828352ULL, 11592265440851656704ULL, 4665729213955833856ULL, 
 };
-uint64_t const knightMoves[64] = {
+static const uint64_t knightMoves[64] = {
   132096ULL,329728ULL,659712ULL,1319424ULL,2638848ULL,5277696ULL,10489856ULL,4202496ULL,
   33816580ULL,84410376ULL,168886289ULL,337772578ULL,675545156ULL,1351090312ULL,2685403152ULL,1075839008ULL,
   8657044482ULL,21609056261ULL,43234889994ULL,86469779988ULL,172939559976ULL,345879119952ULL,687463207072ULL,275414786112ULL,
@@ -43,7 +43,7 @@ uint64_t const knightMoves[64] = {
   1128098930098176ULL,2257297371824128ULL,4796069720358912ULL,9592139440717824ULL,19184278881435648ULL,38368557762871296ULL,4679521487814656ULL,9077567998918656ULL
 };
 
-uint64_t const wPawnAttacks[64] = {
+static const uint64_t wPawnAttacks[64] = {
   0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 
   2ULL, 5ULL, 10ULL, 20ULL, 40ULL, 80ULL, 160ULL, 64ULL, 
   512ULL, 1280ULL, 2560ULL, 5120ULL, 10240ULL, 20480ULL, 40960ULL, 16384ULL, 
@@ -53,7 +53,7 @@ uint64_t const wPawnAttacks[64] = {
   2199023255552ULL, 5497558138880ULL, 10995116277760ULL, 21990232555520ULL, 43980465111040ULL, 87960930222080ULL, 175921860444160ULL, 70368744177664ULL, 
   0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL
 };
-uint64_t const bPawnAttacks[64] = {
+static const uint64_t bPawnAttacks[64] = {
   0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 
   131072ULL, 327680ULL, 655360ULL, 1310720ULL, 2621440ULL, 5242880ULL, 10485760ULL, 4194304ULL, 
   33554432ULL, 83886080ULL, 167772160ULL, 335544320ULL, 671088640ULL, 1342177280ULL, 2684354560ULL, 1073741824ULL, 
@@ -66,7 +66,7 @@ uint64_t const bPawnAttacks[64] = {
 
 
 //evaluation data, PeSTO's Eval Function, {Mid, End}
-int const midPawnEvalTable[64] = {
+static const int midPawnEvalTable[64] = {
     0,   0,   0,   0,   0,   0,  0,   0,
    98, 134,  61,  95,  68, 126, 34, -11,
    -6,   7,  26,  31,  65,  56, 25, -20,
@@ -76,7 +76,7 @@ int const midPawnEvalTable[64] = {
   -35,  -1, -20, -23, -15,  24, 38, -22,
     0,   0,   0,   0,   0,   0,  0,   0
 };
-int const endPawnEvalTable[64] = {
+static const int endPawnEvalTable[64] = {
     0,   0,   0,   0,   0,   0,   0,   0,
   178, 173, 158, 134, 147, 132, 165, 187,
    94, 100,  85,  67,  56,  53,  82,  84,
@@ -87,7 +87,7 @@ int const endPawnEvalTable[64] = {
     0,   0,   0,   0,   0,   0,   0,   0
 };
 
-int const midKnightEvalTable[64] = {
+static const int midKnightEvalTable[64] = {
   -167, -89, -34, -49,  61, -97, -15, -107,
    -73, -41,  72,  36,  23,  62,   7,  -17,
    -47,  60,  37,  65,  84, 129,  73,   44,
@@ -97,7 +97,7 @@ int const midKnightEvalTable[64] = {
    -29, -53, -12,  -3,  -1,  18, -14,  -19,
   -105, -21, -58, -33, -17, -28, -19,  -23
 };
-int const endKnightEvalTable[64] = {
+static const int endKnightEvalTable[64] = {
   -58, -38, -13, -28, -31, -27, -63, -99,
   -25,  -8, -25,  -2,  -9, -25, -24, -52,
   -24, -20,  10,   9,  -1,  -9, -19, -41,
@@ -108,7 +108,7 @@ int const endKnightEvalTable[64] = {
   -29, -51, -23, -15, -22, -18, -50, -64
 };
 
-int const midBishopEvalTable[64] = {
+static const int midBishopEvalTable[64] = {
   -29,   4, -82, -37, -25, -42,   7,  -8,
   -26,  16, -18, -13,  30,  59,  18, -47,
   -16,  37,  43,  40,  35,  50,  37,  -2,
@@ -118,7 +118,7 @@ int const midBishopEvalTable[64] = {
     4,  15,  16,   0,   7,  21,  33,   1,
   -33,  -3, -14, -21, -13, -12, -39, -21,
 };
-int const endBishopEvalTable[64] = {
+static const int endBishopEvalTable[64] = {
   -14, -21, -11,  -8, -7,  -9, -17, -24,
    -8,  -4,   7, -12, -3, -13,  -4, -14,
     2,  -8,   0,  -1, -2,   6,   0,   4,
@@ -129,7 +129,7 @@ int const endBishopEvalTable[64] = {
   -23,  -9, -23,  -5, -9, -16,  -5, -17,
 };
 
-int const midRookEvalTable[64] = {
+static const int midRookEvalTable[64] = {
    32,  42,  32,  51, 63,  9,  31,  43,
    27,  32,  58,  62, 80, 67,  26,  44,
    -5,  19,  26,  36, 17, 45,  61,  16,
@@ -139,7 +139,7 @@ int const midRookEvalTable[64] = {
   -44, -16, -20,  -9, -1, 11,  -6, -71,
   -19, -13,   1,  17, 16,  7, -37, -26
 };
-int const endRookEvalTable[64] = {
+static const int endRookEvalTable[64] = {
   13, 10, 18, 15, 12,  12,   8,   5,
   11, 13, 13, 11, -3,   3,   8,   3,
    7,  7,  7,  5,  4,  -3,  -5,  -3,
@@ -150,7 +150,7 @@ int const endRookEvalTable[64] = {
   -9,  2,  3, -1, -5, -13,   4, -20
 };
 
-int const midQueenEvalTable[64] = {
+static const int midQueenEvalTable[64] = {
   -28,   0,  29,  12,  59,  44,  43,  45,
   -24, -39,  -5,   1, -16,  57,  28,  54,
   -13, -17,   7,   8,  29,  56,  47,  57,
@@ -160,7 +160,7 @@ int const midQueenEvalTable[64] = {
   -35,  -8,  11,   2,   8,  15,  -3,   1,
    -1, -18,  -9,  10, -15, -25, -31, -50
 };
-int const endQueenEvalTable[64] = {
+static const int endQueenEvalTable[64] = {
    -9,  22,  22,  27,  27,  19,  10,  20,
   -17,  20,  32,  41,  58,  25,  30,   0,
   -20,   6,   9,  49,  47,  35,  19,   9,
@@ -171,7 +171,7 @@ int const endQueenEvalTable[64] = {
   -33, -28, -22, -43,  -5, -32, -20, -41
 };
 
-int const midKingEvalTable[64] = {
+static const int midKingEvalTable[64] = {
   -65,  23,  16, -15, -56, -34,   2,  13,
    29,  -1, -20,  -7,  -8,  -4, -38, -29,
    -9,  24,   2, -16, -20,   6,  22, -22,
@@ -181,7 +181,7 @@ int const midKingEvalTable[64] = {
     1,   7,  -8, -64, -43, -16,   9,   8,
   -15,  36,  12, -54,   8, -28,  24,  14
 };
-int const endKingEvalTable[64] = {
+static const int endKingEvalTable[64] = {
   -74, -35, -18, -18, -11,  15,   4, -17,
   -12,  17,  14,  17,  17,  38,  23,  11,
    10,  17,  23,  15,  20,  45,  44,  13,

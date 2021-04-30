@@ -33,14 +33,14 @@ int main() {
   b.printBoard();
 
   Search s(b);
-  // cout << s.perft(6, true) << '\n';
-  Move bestMove = s.abNegaMaxCall(8, true);
+  cout << s.perft(6, true) << '\n';
+  // Move bestMove = s.abNegaMaxCall(8, true);
   // for (int i=0; i<1000000; i++) {
   //   vector<Move>m;
   //   b.moveGen(true, m);
   // }
-  printMove(bestMove);
-  // //quirkyStatement(s.eval);
-  cout << '\n' << "Nodes Searched: " << s.nodes << '\n';
-  cout << "Evaluation: " << s.eval/100.0 << '\n';
+  // printMove(bestMove);
+  // // //quirkyStatement(s.eval);
+  // cout << '\n' << "Nodes Searched: " << s.nodes << '\n';
+  // cout << "Evaluation: " << s.eval/100.0 << '\n';
 }

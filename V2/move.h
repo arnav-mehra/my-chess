@@ -23,7 +23,7 @@ class Move {
             priority = captureVal[c] - captureVal[p];
         }
         Move(uint8_t p, uint8_t f, uint8_t t) {
-            fromSq = f; toSq = t; piece = p; capture = 12;
+            fromSq = f; toSq = t; piece = p; capture = 16;
             priority = quietVal[p+4];
         }
         Move(bool isCheckmate) {
@@ -32,13 +32,13 @@ class Move {
             priority = 0;
         }
 
-        uint8_t getCapture() { return capture; }
-        uint8_t getPiece() { return piece; }
-        uint8_t getFromSq() { return fromSq; }
-        uint8_t getToSq() { return toSq; }
-        int8_t getPriority() { return priority; }
-        uint64_t getFromVal() { return 1ULL << fromSq; }
-        uint64_t getToVal() { return 1ULL << toSq; }
+        inline uint8_t getCapture() { return capture; }
+        inline uint8_t getPiece() { return piece; }
+        inline uint8_t getFromSq() { return fromSq; }
+        inline uint8_t getToSq() { return toSq; }
+        inline int8_t getPriority() { return priority; }
+        constexpr uint64_t getFromVal() { return 1ULL << fromSq; }
+        constexpr uint64_t getToVal() { return 1ULL << toSq; }
 };
 
 

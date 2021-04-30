@@ -18,7 +18,9 @@ namespace Piece {
         B_QUEEN = 10,
         B_KING = 11,
         WHITE = 12,
-        BLACK = 13
+        BLACK = 13,
+        OCCUPIED = 14,
+        UNOCCUPIED = 15
     };
 
     char letters[] = {

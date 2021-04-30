@@ -27,7 +27,7 @@ class Search {
 
             vector<Move> moves;
             b -> moveGen(moves);
-
+            
             for (int8_t i=0; i<moves.size(); i++) {
                 b -> move(moves[i]);
                 n += perft(depth-1);

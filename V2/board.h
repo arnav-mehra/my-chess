@@ -9,10 +9,11 @@ class Board {
   public:
 
     bool turn = true;
-    uint64_t pieces[14] = {
+    uint64_t pieces[16] = {
       0, 0, 0, 0, 0, 0, //white pieces
       0, 0, 0, 0, 0, 0,  //black pieces
-      0, 0 //colors
+      0, 0, //colors
+      0, 0 //occupied and unoccupied
     };
     //num of pieces moved from sq, use to determine castling
     uint8_t wKingSqMoves=0; uint8_t wLRookSqMoves=0; uint8_t wRRookSqMoves=0; 
@@ -27,10 +28,10 @@ class Board {
 
     //used for legal move generation or castling rights
     bool isCheck (uint8_t currSquare);
-    bool isCheck (uint8_t currSquare, uint64_t combined);
+    bool isCheck (uint8_t currSquare, uint64_t OccWOKing);
 
     //making moves
-    inline void toggleMove() { turn = !turn; }
+    constexpr void toggleMove() { turn = !turn; }
     void move (Move &move);
     void unmove (Move &move);
     
@@ -38,7 +39,7 @@ class Board {
     int16_t evaluate();
 
     //other functions for setting up and printing board
-    void initializeBoard() {
+    constexpr void initializeBoard() {
       turn = true;
       pieces[Piece::WHITE] = UINT64_C(18446462598732840960);
       pieces[Piece::BLACK] = UINT64_C(65535);
@@ -58,8 +59,11 @@ class Board {
       pieces[10] = UINT64_C(576460752303423496) & UINT64_C(65535);
       pieces[5] = UINT64_C(1152921504606846992) & UINT64_C(18446462598732840960);
       pieces[11] = UINT64_C(1152921504606846992) & UINT64_C(65535);
+
+      pieces[14] = UINT64_C(18446462598732840960) | UINT64_C(65535);
+      pieces[15] = ~pieces[14];
     }
-    void setBoard (char boardArr[64]) {
+    constexpr void setBoard (char boardArr[64]) {
       clear();
       for (int i=0; i<64; i++) {
         uint64_t val = 1ULL << i;
@@ -105,9 +109,9 @@ class Board {
         turn = true;
         int blackPiece = getCapturedPiece(i);
         
-        if (whitePiece != 12) {
+        if (whitePiece != 16) {
           cout << Piece::letters[whitePiece];
-        } else if (blackPiece != 12) {
+        } else if (blackPiece != 16) {
           cout << Piece::letters[blackPiece];
         } else {
           cout << '.';
@@ -121,7 +125,7 @@ class Board {
 
       turn = currTurn;
     }
-    void clear() {
+    constexpr void clear() {
       for (int i=0; i<14; i++) {
         pieces[i] = 0;
       }
@@ -141,7 +145,7 @@ class Board {
       for (int8_t start = turn? 6 : 0; start < end; start++) {
         if (pieces[start] & currVal) { return start; }
       }
-      return 12;
+      return 16;
     }
     
     //just shorthand methods, might want to make macro
@@ -157,9 +161,15 @@ class Board {
     inline uint64_t getq() { return pieces[10]; }
     inline uint64_t getK() { return pieces[5];  }
     inline uint64_t getk() { return pieces[11]; }
+    inline uint64_t getOccupied() { return pieces[14]; }
+    inline uint64_t getUnoccupied() { return pieces[15]; }
     inline uint64_t getTurn() { return pieces[turn? 12 : 13]; }
     inline uint64_t getNotTurn() { return pieces[turn? 13 : 12]; }
 
+    constexpr void setWhite() { pieces[Piece::WHITE] = pieces[Piece::W_PAWN] ^ pieces[Piece::W_KNIGHT] ^ pieces[Piece::W_BISHOP] ^ pieces[Piece::W_ROOK] ^ pieces[Piece::W_QUEEN] ^ pieces[Piece::W_KING]; }
+    constexpr void setBlack() { pieces[Piece::BLACK] = pieces[Piece::B_PAWN] ^ pieces[Piece::B_KNIGHT] ^ pieces[Piece::B_BISHOP] ^ pieces[Piece::B_ROOK] ^ pieces[Piece::B_QUEEN] ^ pieces[Piece::B_KING]; }
+    constexpr void setOccupied() { pieces[Piece::OCCUPIED] = pieces[Piece::BLACK] | pieces[Piece::WHITE]; }
+    constexpr void setUnoccupied() { pieces[Piece::UNOCCUPIED] = ~pieces[Piece::OCCUPIED]; }
 };
 
 #endif

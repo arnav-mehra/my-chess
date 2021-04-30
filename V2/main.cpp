@@ -33,23 +33,25 @@ int main() {
   // );
   b.printBoard();
 
-  bool useTranpositionTable = true;
+  bool useTranpositionTable = false;
   bool useQuiescentSearch = true;
   Search s(b, useTranpositionTable, useQuiescentSearch);
   
-  // b.addZobristKey();
+  // // b.addZobristKey();
 
-  // cout << s.perft(6) << '\n';
-  // Move bestMove = s.getBestMoveTimed(1000);
-  uint8_t depth = 8;
-  Move bestMove = s.abNegaMaxCall(depth);
+  // // cout << s.perft(6) << '\n';
+  // // Move bestMove = s.getBestMoveTimed(1000);
+  cout << s.perft(6);
+
+  // uint8_t depth = 8;
+  // Move bestMove = s.abNegaMaxCall(depth);
 
 
-  printMove(bestMove);
-  // quirkyStatement(s.eval);
-  cout << '\n' << "Nodes Evaluated: " << s.nodes << '\n';
-  cout << "Evaluation: " << s.eval/100.0 << '\n';
-  cout << "Depth: " << depth+0 << " / " << depth + s.quiescenceDepth << '\n';
+  // printMove(bestMove);
+  // // quirkyStatement(s.eval);
+  // cout << '\n' << "Nodes Evaluated: " << s.nodes << '\n';
+  // cout << "Evaluation: " << s.eval/100.0 << '\n';
+  // cout << "Depth: " << depth+0 << " / " << depth + s.quiescenceDepth << '\n';
 }
 
 

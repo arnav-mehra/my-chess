@@ -4,9 +4,7 @@ using namespace std;
 int16_t Board::evaluate() {
 
     //king precondition
-    if (getK() == 0) {
-        return -10000; 
-    }
+    if (getK() == 0) { return -10000; }
     if (getk() == 0) { return 10000; }
 
     int16_t eval = 0;
