@@ -1,5 +1,3 @@
-#include <algorithm>
-
 using namespace std;
 
 
@@ -44,7 +42,10 @@ void Board::moveGen (vector<Move> &moves) {
         uint64_t attacks = getPawnAttacks(turn, bitScanForward(cPawns)) & getNotTurn();
         while (attacks != 0) {
             moves.push_back(
-                Move( 0, bitScanForward(cPawns), bitScanForward(attacks), getCapturedPiece(bitScanForward(attacks)) )
+                Move(
+                    0, bitScanForward(cPawns), bitScanForward(attacks), 
+                    getCapturedPiece(bitScanForward(attacks))
+                )
             );
           attacks &= attacks-1;
         }
@@ -76,7 +77,7 @@ void Board::moveGen (vector<Move> &moves) {
     //pawn moves 1
     while (up1 != 0) {
         uint8_t toSquare = bitScanForward(up1);
-        if (toSquare < 8 || toSquare > 55) {
+        if (turn? toSquare < 8 : toSquare > 55) {
           moves.push_back(Move(8, turn? toSquare+8 : toSquare-8, toSquare));
           // moves.push_back({9, fromSquare, toSquare, -1});
           // moves.push_back({10, fromSquare, toSquare, -1});
@@ -181,42 +182,48 @@ void Board::captureGen (vector<Move> &moves) {
     uint64_t cRooks = turn? getR() : getr(); uint64_t cQueen = turn? getQ() : getq();
 
     //get attacks
-    while (cPawns != 0) { 
-        uint8_t currSquare = bitScanForward(cPawns);
-        uint64_t attacks = getPawnAttacks(turn, currSquare) & getNotTurn();
+    while (cPawns != 0) {
+        uint64_t attacks = getPawnAttacks(turn, bitScanForward(cPawns)) & getNotTurn();
         while (attacks != 0) {
-            uint8_t toSquare = bitScanForward(attacks);
-            moves.push_back(Move(0, currSquare, toSquare, getCapturedPiece(toSquare)));
+            moves.push_back(
+                Move(
+                    0, bitScanForward(cPawns), bitScanForward(attacks), 
+                    getCapturedPiece(bitScanForward(attacks)))
+                );
             attacks &= attacks-1;
         }
         cPawns &= cPawns-1;
     }
     while (cKnights != 0) {
-        uint8_t currSquare = bitScanForward(cKnights);
-        uint64_t attacks = knightMoves[currSquare] & getNotTurn();
+        uint64_t attacks = knightMoves[bitScanForward(cKnights)] & getNotTurn();
         while (attacks != 0) {
-            uint8_t toSquare = bitScanForward(attacks);
-            moves.push_back(Move(1, currSquare, toSquare, getCapturedPiece(toSquare)));
+            moves.push_back(
+                Move(
+                    1, bitScanForward(cKnights), bitScanForward(attacks), 
+                    getCapturedPiece(bitScanForward(attacks)))
+                );
             attacks &= attacks-1;
         }
         cKnights &= cKnights-1;
     }
     while (cBishops != 0) {
-        uint8_t currSquare = bitScanForward(cBishops);
-        uint64_t attacks = Bmagic(currSquare, combined) & getNotTurn();
+        uint64_t attacks = Bmagic(bitScanForward(cBishops), combined) & getNotTurn();
         while (attacks != 0) {
-            uint8_t toSquare = bitScanForward(attacks);
-            moves.push_back(Move(2, currSquare, toSquare, getCapturedPiece(toSquare)));
+            moves.push_back(
+                Move(2, bitScanForward(cBishops), bitScanForward(attacks), 
+                getCapturedPiece(bitScanForward(attacks)))
+            );
             attacks &= attacks-1;
         }
         cBishops &= cBishops-1;
     }
     while (cRooks != 0) {
-        uint8_t currSquare = bitScanForward(cRooks);
-        uint64_t attacks = Rmagic(currSquare, combined) & getNotTurn();
+        uint64_t attacks = Rmagic(bitScanForward(cRooks), combined) & getNotTurn();
         while (attacks != 0) {
-            uint8_t toSquare = bitScanForward(attacks);
-            moves.push_back(Move(3, currSquare, toSquare, getCapturedPiece(toSquare)));
+            moves.push_back(
+                Move(3, bitScanForward(cRooks), bitScanForward(attacks), 
+                getCapturedPiece(bitScanForward(attacks)))
+            );
             attacks &= attacks-1;
         }
         cRooks &= cRooks-1;
@@ -225,8 +232,10 @@ void Board::captureGen (vector<Move> &moves) {
         uint8_t currSquare = bitScanForward(cQueen);
         uint64_t attacks = (Bmagic(currSquare, combined) ^ Rmagic(currSquare, combined)) & getNotTurn();
         while (attacks != 0) {
-            uint8_t toSquare = bitScanForward(attacks);
-            moves.push_back(Move(4, currSquare, toSquare, getCapturedPiece(toSquare)));
+            moves.push_back(
+                Move(4, currSquare, bitScanForward(attacks), 
+                getCapturedPiece(bitScanForward(attacks)))
+            );
             attacks &= attacks-1;
         }
         cQueen &= cQueen-1;

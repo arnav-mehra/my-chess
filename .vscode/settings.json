@@ -3,6 +3,10 @@
         "vector": "cpp",
         "iostream": "cpp",
         "algorithm": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "bitset": "cpp",
+        "array": "cpp",
+        "map": "cpp",
+        "utility": "cpp"
     }
 }

@@ -15,6 +15,12 @@
 using namespace std;
 
 
+
+map<array<uint64_t,7>, int> blackZKeyTable;
+map<array<uint64_t,7>, int> whiteZKeyTable;
+
+
+
 //precomputed move data
 uint64_t const kingMoves[64] = {
   770ULL, 1797ULL, 3594ULL, 7188ULL, 14376ULL, 28752ULL, 57504ULL, 49216ULL, 

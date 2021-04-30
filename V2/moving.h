@@ -3,7 +3,7 @@ using namespace std;
 
 void Board::move (Move &move) {
 
-    uint8_t piece = turn? move.getPiece() : move.getPiece() + 6;
+    uint8_t piece = move.getPiece() + (turn? 0 : 6);
 
     if (move.getCapture() != 12) { //piece is captured
 
@@ -71,12 +71,13 @@ void Board::move (Move &move) {
 
 void Board::unmove (Move &move) {
     toggleMove();
-    uint8_t piece = turn? move.getPiece() : move.getPiece() + 6;
+
+    uint8_t piece = move.getPiece() + (turn? 0 : 6);
 
     //move piece back
     if (move.getCapture() != 12) { //piece is captured
 
-        //move capturing piece
+        //unmove capturing piece
         pieces[piece] |= move.getFromVal();
         pieces[piece] &= ~move.getToVal();
         //place back captured piece

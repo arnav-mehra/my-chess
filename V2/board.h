@@ -4,7 +4,6 @@
 using namespace std;
 
 
-
 class Board { 
   
   public:
@@ -127,8 +126,11 @@ class Board {
         pieces[i] = 0;
       }
     }
-    
 
+    // eval == 11000 -> was not found, returned with fake eval
+    // eval != 11000 -> was found, returned with real eval
+    pair<array<uint64_t,7>, int> getBoardKey();
+    
 
   private: 
 

@@ -9,11 +9,16 @@ class Search {
     public:
 
         Board* b;
-        int nodes=0, eval=0;
-        Search(Board board) {
-            b = &board;
-        }
+        int nodes=0; int16_t eval=0; uint8_t quiescenceDepth=0;
+        bool useTranspositionTable; bool useQuiescentSearch;
+        
 
+        Search(Board board, bool useTT, bool useQui) {
+            b = &board;
+            useTranspositionTable = useTT;
+            useQuiescentSearch = useQui;
+        }
+        
 
         //all possibilities, more for benchmarking
         int perft(uint8_t depth) {
@@ -23,7 +28,7 @@ class Search {
             vector<Move> moves;
             b -> moveGen(moves);
 
-            for (uint8_t i=0; i<moves.size(); i++) {
+            for (int8_t i=0; i<moves.size(); i++) {
                 b -> move(moves[i]);
                 n += perft(depth-1);
                 b -> unmove(moves[i]);
@@ -36,33 +41,34 @@ class Search {
         Move abNegaMaxCall(uint8_t depth) {
             nodes = 0;
             int16_t alpha = -10000, beta = 10000;
-            uint8_t alphaIndex = -1;
+            int8_t alphaIndex = -1;
             
-            bool currentlyCheck = b -> isCheck(65);
-            
-            vector<Move> moves;
-            b -> moveGen(moves);
+            vector<Move> moves = legalMoveGen();
 
-            for (uint8_t i=0; i<moves.size(); i++) {
+            for (int8_t i=0; i<moves.size(); i++) {
                 b -> move(moves[i]);
-
-                b -> toggleMove();
-                if (!(b -> isCheck(65))) { //move is legal -> compute eval
-                    b -> toggleMove();
-                    int16_t score = -alphaBetaNegaMax(-beta, -alpha, depth-1);
-                    if (score > alpha) {
-                        alpha = score;
-                        alphaIndex = i;
+                int16_t score;
+                if (useTranspositionTable) {
+                    pair<array<uint64_t,7>, int> keyFound(b -> getBoardKey());
+                    // eval=11000 -> was not found or added, eval!=11000 -> was found and returned real eval
+                    if (keyFound.second == 11000) {
+                        score = -alphaBetaNegaMax(-beta, -alpha, depth-1);
+                        addBoardEvalPair(pair<array<uint64_t,7>, int>(keyFound.first, score), b -> turn);
+                    } else {
+                        score = keyFound.second;
                     }
                 } else {
-                    b -> toggleMove();
+                    score = -alphaBetaNegaMax(-beta, -alpha, depth-1);
                 }
-                
+                if (score > alpha) {
+                    alpha = score;
+                    alphaIndex = i;
+                }
                 b -> unmove(moves[i]);
             }
 
             if (alphaIndex == -1) { // no move found
-                return Move(currentlyCheck);
+                return Move(b -> isCheck(65));
             } else {
                 eval = alpha;
                 return moves[alphaIndex];
@@ -92,52 +98,6 @@ class Search {
             return possibleMoves[bestMoveIndex];
         }
         
-
-
-    private:
-
-        // capture sequences
-        int16_t quiesce(int16_t alpha, int16_t beta) {
-            int16_t stand_pat = b -> evaluate();
-            if (stand_pat >= beta) { nodes++; return beta; }
-            if (alpha < stand_pat) { alpha = stand_pat; }
-
-            vector<Move> moves;
-            b -> captureGen(moves);
-
-            for (uint8_t i=0; i<moves.size(); i++)  {
-                b -> move(moves[i]);
-                int16_t score = -quiesce(-beta, -alpha);
-                b -> unmove(moves[i]);
-
-                if (score >= beta) { nodes++; return beta; }
-                if (score > alpha) { alpha = score; }
-            }
-
-            nodes++;
-            return alpha;
-        }
-
-        //negamax
-        int16_t alphaBetaNegaMax(int16_t alpha, int16_t beta, uint8_t depth) {
-            if (depth == 0) { return quiesce(alpha, beta); }
-
-            vector<Move> moves;
-            b -> moveGen(moves);
-
-            if (moves.size() == 0) { return 0; }
-            for (uint8_t i=0; i<moves.size(); i++) {
-                b -> move(moves[i]);
-                int16_t score = -alphaBetaNegaMax(-beta, -alpha, depth-1);
-                b -> unmove(moves[i]);
-
-                if (score >= beta) { return beta; }
-                if (score > alpha) { alpha = score; }
-            }
-
-            return alpha;
-        }
-        
         //legal move gen
         vector<Move> legalMoveGen() {
             
@@ -147,9 +107,9 @@ class Search {
             vector<Move> moves;
             b -> moveGen(moves);
 
-            for (uint8_t i=0; i<moves.size(); i++) {
+            for (int8_t i=0; i<moves.size(); i++) {
                 b -> move(moves[i]);
-
+                
                 b -> toggleMove();
                 if (!(b -> isCheck(65))) { //move is legal -> compute eval
                     b -> toggleMove();
@@ -161,18 +121,78 @@ class Search {
                 b -> unmove(moves[i]);
             }
 
-            if (legalMoves.size() == 0) {
-                return { Move(currentlyCheck) };
-            } else {
-                return legalMoves;
+            return legalMoves;            
+        }
+
+
+    private:
+
+        // capture sequences
+        int16_t quiesce(int16_t alpha, int16_t beta, uint8_t extendedDepth) {
+            if (extendedDepth > quiescenceDepth) { quiescenceDepth = extendedDepth; }
+
+            int16_t stand_pat = b -> evaluate(); nodes++;
+            if (stand_pat >= beta) { return beta; }
+            if (alpha < stand_pat) { alpha = stand_pat; }
+
+            vector<Move> moves;
+            b -> captureGen(moves);
+
+            for (int8_t i=0; i<moves.size(); i++)  {
+                b -> move(moves[i]);
+                int16_t score = -quiesce(-beta, -alpha, extendedDepth+1);
+                b -> unmove(moves[i]);
+
+                if (score >= beta) { return beta; }
+                if (score > alpha) { alpha = score; }
             }
-            
+
+            return alpha;
+        }
+
+        //negamax
+        int16_t alphaBetaNegaMax(int16_t alpha, int16_t beta, uint8_t depth) {
+            if (depth == 0) { 
+                if (useQuiescentSearch) {
+                    return quiesce(alpha, beta, 0);
+                } else {
+                    nodes++; 
+                    return b -> evaluate();
+                } 
+            }
+
+            vector<Move> moves;
+            b -> moveGen(moves);
+
+            if (moves.size() == 0) { return 0; }
+            for (int8_t i=0; i<moves.size(); i++) {
+                b -> move(moves[i]);
+                int16_t score;
+                if (useTranspositionTable) {
+                    pair<array<uint64_t,7>, int> keyFound(b -> getBoardKey());
+                    // eval=11000 -> was not found or added, eval!=11000 -> was found and returned real eval
+                    if (keyFound.second == 11000) {
+                        score = -alphaBetaNegaMax(-beta, -alpha, depth-1);
+                        addBoardEvalPair(pair<array<uint64_t,7>, int>(keyFound.first, score), b -> turn);
+                    } else {
+                        score = keyFound.second;
+                    }
+                } else {
+                    score = -alphaBetaNegaMax(-beta, -alpha, depth-1);
+                }
+                b -> unmove(moves[i]);
+
+                if (score >= beta) { return beta; }
+                if (score > alpha) { alpha = score; }
+            }
+
+            return alpha;
         }
         
         //for iterative deepening, takes in the current best move to eval first
         int abNegaMaxPreferredCall(uint8_t depth, vector<Move> &moves, int currBestIndex) {
             int16_t alpha = -10000, beta = 10000;
-            uint8_t alphaIndex = -1;
+            int8_t alphaIndex = -1;
 
             //check currBest first for move ordering
             b -> move(moves[currBestIndex]);
@@ -184,7 +204,7 @@ class Search {
             b -> unmove(moves[currBestIndex]);
 
 
-            for (uint8_t i=0; i<moves.size(); i++) {
+            for (int8_t i=0; i<moves.size(); i++) {
                 if (i != currBestIndex) {
                     b -> move(moves[i]);
                     int16_t score = -alphaBetaNegaMax(-beta, -alpha, depth-1);

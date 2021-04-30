@@ -40,3 +40,29 @@ class Move {
         uint64_t getFromVal() { return 1ULL << fromSq; }
         uint64_t getToVal() { return 1ULL << toSq; }
 };
+
+
+
+// piece dict:
+    // 0: pawns
+    // 1: knights
+    // 2: bishop
+    // 3: rook
+    // 4: queen
+    // 5: king
+    // 6: left castle
+    // 7: right castle
+    // 8: pawn promo -> knight
+    // 9: pawn promo -> bishop
+    // 10: pawn promo -> rook
+    // 11: pawn promo -> queen
+
+// capture dict and piece indexes:
+    // 0: w pawns
+    // 1: w knights
+    // 2: w bishop
+    // 3: w rook
+    // 4: w queen
+    // 5: w king
+    // 6-11: b pieces
+    // 12: no capture

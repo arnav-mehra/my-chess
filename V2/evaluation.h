@@ -1,13 +1,13 @@
 using namespace std;
 
 
-int16_t Board::evaluate () {
+int16_t Board::evaluate() {
 
     //king precondition
-    uint64_t const wKing = getK(); uint64_t const bKing = getk();
-    if (wKing == 0) { return -10000; }
-    if (bKing == 0) { return 10000; }
-
+    if (getK() == 0) {
+        return -10000; 
+    }
+    if (getk() == 0) { return 10000; }
 
     int16_t eval = 0;
 
@@ -30,7 +30,7 @@ int16_t Board::evaluate () {
     while (bRooks != 0)   { eval -= getRookEvalTable   (isEndGame, 64-bitScanForward(bRooks))   + 563; bRooks &= bRooks-1;     }
     while (wQueens != 0)  { eval += getQueenEvalTable  (isEndGame, bitScanForward(wQueens))     + 950; wQueens &= wQueens-1;   }
     while (bQueens != 0)  { eval -= getQueenEvalTable  (isEndGame, 64-bitScanForward(bQueens))  + 950; bQueens &= bQueens-1;   }
-    eval += getKingEvalTable(isEndGame, bitScanForward(wKing)) - getKingEvalTable(isEndGame, 64-bitScanForward(bKing));
+    eval += getKingEvalTable(isEndGame, bitScanForward(getK())) - getKingEvalTable(isEndGame, 64-bitScanForward(getk()));
 
     return turn? eval : -eval;
 }
