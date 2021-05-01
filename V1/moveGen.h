@@ -7,7 +7,7 @@ using namespace std;
 //move generation
 
 void Board::moveGen (bool turn, vector<Move> &moves) {
-    
+    if ((black & white) != 0) { cout << "shit"; }
     //occupancy
     uint64_t combined = black | white;
     uint64_t empty = ~combined;

@@ -19,8 +19,8 @@ namespace Piece {
         B_KING = 11,
         WHITE = 12,
         BLACK = 13,
-        OCCUPIED = 14,
-        UNOCCUPIED = 15
+        OCCUP = 14,
+        UNOCC = 15
     };
 
     char letters[] = {
@@ -30,8 +30,8 @@ namespace Piece {
     };
 };
 
-namespace MovePiece {
-    enum MovePiece : unsigned int {
+namespace MoveType {
+    enum MoveType : unsigned int {
         PAWN = 0,
         KNIGHT = 1,
         BISHOP = 2,
@@ -43,7 +43,8 @@ namespace MovePiece {
         KNIGHT_PROMO = 8,
         BISHOP_PROMO = 9,
         ROOK_PROMO = 10,
-        QUEEN_PROMO = 11
+        QUEEN_PROMO = 11,
+        NONE = 12
     };
 };
 

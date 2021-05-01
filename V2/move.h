@@ -7,7 +7,7 @@ int16_t const quietVal[12] = {
     2, 3, 3, 0, 1, -20, //quiet
     7, 5 //castle
 };
-
+int cap = 0;
 
 class Move { 
 
@@ -21,6 +21,7 @@ class Move {
         Move(uint8_t p, uint8_t f, uint8_t t, uint8_t c) {
             fromSq = f; toSq = t; piece = p; capture = c;
             priority = captureVal[c] - captureVal[p];
+            cap++;
         }
         Move(uint8_t p, uint8_t f, uint8_t t) {
             fromSq = f; toSq = t; piece = p; capture = 16;

@@ -33,8 +33,13 @@ int main() {
   b.printBoard();
 
   Search s(b);
+<<<<<<< Updated upstream
   cout << s.perft(6, true) << '\n';
   // Move bestMove = s.abNegaMaxCall(8, true);
+=======
+  cout << s.perft(3, true) << '\n';
+  // Move bestMove = s.abNegaMaxCall(7, true);
+>>>>>>> Stashed changes
   // for (int i=0; i<1000000; i++) {
   //   vector<Move>m;
   //   b.moveGen(true, m);

@@ -1,4 +1,4 @@
-#define bitScanForward(bb) __builtin_ctzll(bb)
+#define lsb(b) __builtin_ctzll(b)
 
 #define getLeftCastleChecks(turn) (turn? 2161727821137838080ULL : 30ULL)
 #define getRightCastleChecks(turn) (turn? 8070450532247928832ULL : 112ULL)

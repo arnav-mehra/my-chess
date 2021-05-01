@@ -68,7 +68,7 @@ class Search {
             }
 
             if (alphaIndex == -1) { // no move found
-                return Move(b -> isCheck(65));
+                return Move(b -> isCheck());
             } else {
                 eval = alpha;
                 return moves[alphaIndex];
@@ -102,7 +102,7 @@ class Search {
         vector<Move> legalMoveGen() {
             
             vector<Move> legalMoves;
-            bool currentlyCheck = b -> isCheck(65);
+            bool currentlyCheck = b -> isCheck();
 
             vector<Move> moves;
             b -> moveGen(moves);
@@ -111,7 +111,7 @@ class Search {
                 b -> move(moves[i]);
                 
                 b -> toggleMove();
-                if (!(b -> isCheck(65))) { //move is legal -> compute eval
+                if (!(b -> isCheck())) { //move is legal -> compute eval
                     b -> toggleMove();
                     legalMoves.push_back(moves[i]);
                 } else {

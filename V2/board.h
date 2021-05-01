@@ -13,7 +13,7 @@ class Board {
       0, 0, 0, 0, 0, 0, //white pieces
       0, 0, 0, 0, 0, 0,  //black pieces
       0, 0, //colors
-      0, 0 //occupied and unoccupied
+      0, 0 //combined, empty
     };
     //num of pieces moved from sq, use to determine castling
     uint8_t wKingSqMoves=0; uint8_t wLRookSqMoves=0; uint8_t wRRookSqMoves=0; 
@@ -23,12 +23,12 @@ class Board {
     // generate all or just capturing moves
     void moveGen (vector<Move> &moves);
     void captureGen (vector<Move> &moves);
-    bool canRightCastle (uint64_t empty);
-    bool canLeftCastle (uint64_t empty);
+    bool canRightCastle();
+    bool canLeftCastle();
 
     //used for legal move generation or castling rights
+    bool isCheck();
     bool isCheck (uint8_t currSquare);
-    bool isCheck (uint8_t currSquare, uint64_t OccWOKing);
 
     //making moves
     constexpr void toggleMove() { turn = !turn; }
@@ -83,6 +83,8 @@ class Board {
           case 'P': pieces[Piece::WHITE]+=val; pieces[Piece::W_PAWN]+=val; break;
         }
       }
+      pieces[Piece::OCCUP] = pieces[Piece::WHITE] ^ pieces[Piece::BLACK];
+      pieces[Piece::UNOCC] = ~pieces[Piece::OCCUP];
     }
     void setBoardFen (string FENStr) {
       char boardStr[64];
@@ -126,7 +128,7 @@ class Board {
       turn = currTurn;
     }
     constexpr void clear() {
-      for (int i=0; i<14; i++) {
+      for (int i=0; i<15; i++) {
         pieces[i] = 0;
       }
     }
@@ -168,8 +170,8 @@ class Board {
 
     constexpr void setWhite() { pieces[Piece::WHITE] = pieces[Piece::W_PAWN] ^ pieces[Piece::W_KNIGHT] ^ pieces[Piece::W_BISHOP] ^ pieces[Piece::W_ROOK] ^ pieces[Piece::W_QUEEN] ^ pieces[Piece::W_KING]; }
     constexpr void setBlack() { pieces[Piece::BLACK] = pieces[Piece::B_PAWN] ^ pieces[Piece::B_KNIGHT] ^ pieces[Piece::B_BISHOP] ^ pieces[Piece::B_ROOK] ^ pieces[Piece::B_QUEEN] ^ pieces[Piece::B_KING]; }
-    constexpr void setOccupied() { pieces[Piece::OCCUPIED] = pieces[Piece::BLACK] | pieces[Piece::WHITE]; }
-    constexpr void setUnoccupied() { pieces[Piece::UNOCCUPIED] = ~pieces[Piece::OCCUPIED]; }
+    constexpr void setOccupied() { pieces[Piece::OCCUP] = pieces[Piece::BLACK] | pieces[Piece::WHITE]; }
+    constexpr void setUnoccupied() { pieces[Piece::UNOCC] = ~pieces[Piece::OCCUP]; }
 };
 
 #endif
