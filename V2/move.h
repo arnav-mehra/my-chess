@@ -1,18 +1,21 @@
 using namespace std;
 
 
-int16_t const captureVal[6] = {100, 250, 300, 500, 900, 10000};
+int16_t const captureVal[6] = {100, 305, 333, 563, 950, 10000};
 int16_t const quietVal[12] = {
-    90, -10, -10, -10, //promo
-    2, 3, 3, 0, 1, -20, //quiet
+    950, -10, -10, -10, //promo
+    0, 0, 0, 0, 0, -20, //quiet
     7, 5 //castle
 };
-int cap = 0;
+// int cap = 0;
+// int pieceDist[6];
+
+
 
 class Move { 
 
     public:
-
+        
         uint8_t capture; uint8_t piece;
         uint8_t fromSq; uint8_t toSq;        
         int16_t priority;
@@ -20,12 +23,15 @@ class Move {
 
         Move(uint8_t p, uint8_t f, uint8_t t, uint8_t c) {
             fromSq = f; toSq = t; piece = p; capture = c;
-            priority = captureVal[c] - captureVal[p];
-            cap++;
+            priority = captureVal[c] - captureVal[p] + 10;
+
+            // cap++; pieceDist[p]++;
         }
         Move(uint8_t p, uint8_t f, uint8_t t) {
-            fromSq = f; toSq = t; piece = p; capture = 16;
-            priority = quietVal[p+4];
+            fromSq = f; toSq = t; piece = p; capture = 12;
+            priority = quietVal[p+4];            
+            
+            // pieceDist[p]++;
         }
         Move(bool isCheckmate) {
             fromSq = 0; toSq = 0;

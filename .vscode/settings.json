@@ -8,6 +8,7 @@
         "array": "cpp",
         "map": "cpp",
         "utility": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "cmath": "cpp"
     }
 }

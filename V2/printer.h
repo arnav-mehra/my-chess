@@ -65,7 +65,7 @@ void printMove(Move &m) {
   char p = pieceChars[m.piece];
   int f = m.fromSq, t = m.toSq;
 
-  if (m.capture != 16) {
+  if (m.capture != 12) {
     cout << p << 'x' << letters[t%8] << 8-t/8 << '\n';
   } else {
     cout << p << letters[t%8] << 8-t/8 << '\n';

@@ -2,9 +2,9 @@ using namespace std;
 
 
 void Board::move (Move &move) {
-    if ((pieces[Piece::WHITE] & pieces[Piece::BLACK]) != 0) { cout << "penis"; }
+    
     uint8_t piece = move.getPiece() + (turn? 0 : 6);
-
+    // eval += move.evalDiff;
 
     if (move.getCapture() != 12) { //piece is captured
 
@@ -21,7 +21,7 @@ void Board::move (Move &move) {
         pieces[piece-7] |= move.getToVal();
         
     } else if (move.getPiece() >= 6) { // move is castle
-        cout << "shit\n";
+        
         pieces[turn? Piece::W_KING : Piece::B_KING] &= ~move.getFromVal();
         pieces[turn? Piece::W_KING : Piece::B_KING] |= move.getToVal();
         switch(piece) {
@@ -67,6 +67,7 @@ void Board::move (Move &move) {
     pieces[Piece::UNOCC] = ~pieces[Piece::OCCUP];
 
     toggleMove();
+    
 }
 
 
@@ -74,7 +75,7 @@ void Board::unmove (Move &move) {
     toggleMove();
 
     uint8_t piece = move.getPiece() + (turn? 0 : 6);
-
+    // eval -= move.evalDiff;
 
     if (move.getCapture() != 12) { //piece is captured
 
@@ -135,4 +136,5 @@ void Board::unmove (Move &move) {
     }
     pieces[Piece::OCCUP] = pieces[Piece::WHITE] ^ pieces[Piece::BLACK];
     pieces[Piece::UNOCC] = ~pieces[Piece::OCCUP];
+
 }
