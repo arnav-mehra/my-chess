@@ -40,8 +40,8 @@ int main() {
 
 
   uint8_t depth = 7;
-  Move bestMove = s.iterativeCall(depth);
-  // Move bestMove = s.abNegaMaxCall(depth);
+  // Move bestMove = s.iterativeCall(depth);
+  Move bestMove = s.abNegaMaxCall(depth);
   
 
   printMove(bestMove);
