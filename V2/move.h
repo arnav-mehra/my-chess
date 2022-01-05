@@ -39,13 +39,13 @@ class Move {
             priority = 0;
         }
 
-        inline uint8_t getCapture() { return capture; }
-        inline uint8_t getPiece() { return piece; }
-        inline uint8_t getFromSq() { return fromSq; }
-        inline uint8_t getToSq() { return toSq; }
-        inline int8_t getPriority() { return priority; }
-        constexpr uint64_t getFromVal() { return 1ULL << fromSq; }
-        constexpr uint64_t getToVal() { return 1ULL << toSq; }
+        uint8_t getCapture() { return capture; }
+        uint8_t getPiece() { return piece; }
+        uint8_t getFromSq() { return fromSq; }
+        uint8_t getToSq() { return toSq; }
+        int8_t getPriority() { return priority; }
+        inline uint64_t getFromVal() { return 1ULL << fromSq; }
+        inline uint64_t getToVal() { return 1ULL << toSq; }
 };
 
 
