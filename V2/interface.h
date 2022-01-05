@@ -2,7 +2,7 @@ using namespace std;
 
 
 
-constexpr void Board::initializeBoard() {
+void Board::initializeBoard() {
     turn = true;
     pieces[Piece::WHITE] = UINT64_C(18446462598732840960);
     pieces[Piece::BLACK] = UINT64_C(65535);
@@ -28,7 +28,7 @@ constexpr void Board::initializeBoard() {
 }
 
 
-constexpr void Board::setBoard (char boardArr[64]) {
+void Board::setBoard (char boardArr[64]) {
     clear();
     for (int i=0; i<64; i++) {
     uint64_t val = 1ULL << i;
@@ -103,8 +103,7 @@ void Board::printBoard() {
     turn = currTurn;
 }
 
-
-constexpr void Board::clear() {
+void Board::clear() {
     for (int i=0; i<15; i++) {
     pieces[i] = 0;
     }
