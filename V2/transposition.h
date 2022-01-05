@@ -1,7 +1,7 @@
 using namespace std;
 
 
-inline array<uint64_t,7> Board::getBoardKey() {
+array<uint64_t,7> Board::getBoardKey() {
     // array<uint64_t,7> boardKey;
     if (turn) {
         return {
