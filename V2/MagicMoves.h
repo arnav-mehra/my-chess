@@ -1,3 +1,9 @@
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+#pragma once
+=======
+>>>>>>> Stashed changes
 /**
  *magicmoves.h
  *
@@ -27,6 +33,10 @@
  *3. This notice may not be removed or altered from any source distribution.
  */
 
+<<<<<<< Updated upstream
+=======
+>>>>>>> 0990fb1dff89ad5922db1d893123056578fe63de
+>>>>>>> Stashed changes
 #include "MagicMoves.hpp"
 #include "iostream"
 #ifdef _MSC_VER

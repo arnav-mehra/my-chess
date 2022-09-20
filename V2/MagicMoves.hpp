@@ -1,6 +1,66 @@
 /**
  *magicmoves.h
  *
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+ *Header file for magic move bitboard generation.  Include this in any files
+ *need this functionality.
+ *
+ *Usage:
+ *You must first initialize the generator with a call to initmagicmoves().
+ *Then you can use the following macros for generating move bitboards by
+ *giving them a square and an occupancy.  The macro will then "return"
+ *the correct move bitboard for that particular square and occupancy. It
+ *has been named Rmagic and Bmagic so that it will not conflict with
+ *any functions/macros in your chess program called Rmoves/Bmoves. You
+ *can macro Bmagic/Rmagic to Bmoves/Rmoves if you wish.  If you want to
+ *minimize the size of the bitboards, make MINIMIZE_MAGIC uncommented in this
+ *header (more info on this later).  Where you typedef your unsigned 64-bit
+ *integer declare __64_BIT_INTEGER_DEFINED__.  If USE_INLINING is uncommented,
+ *the macros will be expressed as MMINLINEd functions.  If PERFECT_MAGIC_HASH is
+ *uncomment, the move generator will use an additional indrection to make the
+ *table sizes smaller : (~50kb+((original size)/sizeof(PERFECT_MAGIC_HASH)).
+ *The size listed from here on out are the sizes without PERFECT_MAGIC_HASH.
+ *
+ *Bmagic(square, occupancy)
+ *Rmagic(square, occupancy)
+ *
+ *Square is an integer that is greater than or equal to zero and less than 64.
+ *Occupancy is any unsigned 64-bit integer that describes which squares on
+ *the board are occupied.
+ *
+ *The following macros are identical to Rmagic and Bmagic except that the
+ *occupancy is assumed to already have been "masked".  Look at the following
+ *source or read up on the internet about magic bitboard move generation to
+ *understand the usage of these macros and what it means by "an occupancy that
+ *has already been masked".  Using the following macros when possible might be
+ *a tiny bit faster than using Rmagic and Bmagic because it avoids an array
+ *access and a 64-bit & operation.
+ *
+ *BmagicNOMASK(square, occupancy)
+ *RmagicNOMASK(square, occupancy)
+ *
+ *Unsigned 64 bit integers are referenced by this generator as U64.
+ *Edit the beginning lines of this header for the defenition of a 64 bit
+ *integer if necessary.
+ *
+ *If MINIMIZE_MAGIC is defined before including this file:
+ *The move bitboard generator will use up 841kb of memory.
+ *41kb of memory is used for the bishop database and 800kb is used for the rook
+ *database.  If you feel the 800kb rook database is too big, then comment it out
+ *and use a more traditional move bitboard generator in conjunction with the
+ *magic move bitboard generator for bishops.
+ *
+ *If MINIMIAZE_MAGIC is not defined before including this file:
+ *The move bitboard generator will use up 2304kb of memory but might perform a bit
+ *faster.
+ *
+ *Copyright (C) 2007 Pradyumna Kannan.
+ *
+ *This code is provided 'as-is', without any expressed or implied warranty.
+=======
+>>>>>>> Stashed changes
  *Source file for magic move bitboard generation.
  *
  *See header file for instructions on usage.
@@ -11,6 +71,10 @@
  *Copyright (C) 2007 Pradyumna Kannan.
  *
  *This code is provided 'as-is', without any express or implied warranty.
+<<<<<<< Updated upstream
+=======
+>>>>>>> 0990fb1dff89ad5922db1d893123056578fe63de
+>>>>>>> Stashed changes
  *In no event will the authors be held liable for any damages arising from
  *the use of this code. Permission is granted to anyone to use this
  *code for any purpose, including commercial applications, and to alter
@@ -30,17 +94,7 @@
 #ifndef _magicmovesh
 #define _magicmovesh
 #define MINIMIZE_MAGIC
-#define USE_INLINING /*the MMINLINE keyword is assumed to be available*/
-
-#ifndef __64_BIT_INTEGER_DEFINED__
-	#define __64_BIT_INTEGER_DEFINED__
-	#if defined(_MSC_VER) && _MSC_VER<1300
-		typedef unsigned __int64 U64; //For the old microsoft compilers
-	#else
-		typedef unsigned long long  U64; //Supported by MSC 13.00+ and C99
-	#endif //defined(_MSC_VER) && _MSC_VER<1300
-#endif //__64_BIT_INTEGER_DEFINED__
-/***********MODIFY THE ABOVE IF NECESSARY**********/
+#define USE_INLINING
 
 /*Defining the inlining keyword*/
 #ifdef USE_INLINING

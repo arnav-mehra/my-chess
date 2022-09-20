@@ -1,8 +1,6 @@
-using namespace std;
+#pragma once
 
-
-
-void printGrid (uint64_t num) {
+void printGrid(U64 num) {
   for (int i=0; i<64; i++) {
     cout << num%2 << " ";
     num /= 2;
@@ -11,7 +9,8 @@ void printGrid (uint64_t num) {
     }
   }
 }
-void printNumGrid () {
+
+void printNumGrid() {
   for (int i=0; i<8; i++) {
     cout << '\n';
     for (int j=0; j<8; j++) {
@@ -20,7 +19,7 @@ void printNumGrid () {
   }
 }
 
-void printTable(uint64_t table[64][4096]) {
+void printTable(U64 table[64][4096]) {
   for (int i=0; i<64; i++) {
     for (int j=0; j<4096; j++) {
       if (table[i][j] != 0) {
@@ -32,9 +31,9 @@ void printTable(uint64_t table[64][4096]) {
   }
 }
 
-void printMoves(vector<Move> moves) {
+void printMoves(MoveList& moves) {
   for (int i=0; i<moves.size(); i++) {
-    switch (moves[i].piece) {
+    switch (moves[i].getPiece()) {
       case 0: cout << "P"; break;
       case 1: cout << "N"; break;
       case 2: cout << "B"; break;
@@ -44,8 +43,8 @@ void printMoves(vector<Move> moves) {
       case 6: cout << "O"; break;
       case 7: cout << "O"; break;
     }
-    cout << ": (" << (int)(moves[i].fromSq) << ", " << (int)(moves[i].toSq) << ") ";
-    switch (moves[i].capture) {
+    cout << ": (" << (int)(moves[i].getFromSq()) << ", " << (int)(moves[i].getToSq()) << ") ";
+    switch (moves[i].getCapture()) {
       case 0: cout << "P"; break;
       case 1: cout << "N"; break;
       case 2: cout << "B"; break;
@@ -62,17 +61,19 @@ void printMove(Move &m) {
   char pieceChars[] = {'P', 'N', 'B', 'R', 'Q', 'K', 'O', 'O'};
   char letters[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
 
-  char p = pieceChars[m.piece];
-  int f = m.fromSq, t = m.toSq;
+  char p = pieceChars[m.getPiece()];
+  int f = m.getFromSq(), t = m.getToSq();
 
-  if (m.capture != 12) {
+  if (m.getCapture() != 12) {
     cout << p << 'x' << letters[t%8] << 8-t/8 << '\n';
   } else {
     cout << p << letters[t%8] << 8-t/8 << '\n';
   }
 }
+
 void printMovePure(Move move) {
-  cout << move.piece << ", " << move.fromSq << ", " << move.toSq << ", " << move.capture << '\n';
+  cout << move.getPiece() << ", " << move.getFromSq() << ", "
+       << move.getToSq() << ", " << move.getCapture() << '\n';
 }
 
 void quirkyStatement(int eval) {
@@ -95,4 +96,3 @@ void quirkyStatement(int eval) {
   }
   cout << '\n';
 }
-
