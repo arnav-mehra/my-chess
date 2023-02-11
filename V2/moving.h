@@ -1,102 +1,140 @@
-#pragma once
+using namespace std;
 
-inline void Board::toggleTurn() {
-    turn = !turn;
-}
 
-inline void Board::incrementFromDist(U32 fromSq) {
-    fromDist[fromSq]++;
-}
+void Board::move (Move &move) {
+    
+    uint8_t piece = move.getPiece() + (turn? 0 : 6);
+    // eval += move.evalDiff;
 
-inline void Board::decrementFromDist(U32 fromSq) {
-    fromDist[fromSq]--;
-}
+    if (move.getCapture() != 12) { //piece is captured
 
-inline void Board::move(Move &move) {
-    performMove(move);
-    incrementFromDist(move.getFromSq());
-    toggleTurn();
-}
+        //remove captured piece
+        pieces[move.getCapture()] &= ~move.getToVal();
+        pieces[turn? Piece::BLACK : Piece::WHITE] &= ~move.getToVal();
+        //move capturing piece
+        pieces[piece] &= ~move.getFromVal();
+        pieces[piece] |= move.getToVal();
 
-inline void Board::unmove(Move &move) {
-    toggleTurn();
-    decrementFromDist(move.getFromSq());
-    performMove(move);
-}
+    } else if (move.getPiece() >= 8) { // move is promotion
+        
+        pieces[turn? Piece::W_PAWN : Piece::B_PAWN] &= ~move.getFromVal();
+        pieces[piece-7] |= move.getToVal();
+        
+    } else if (move.getPiece() >= 6) { // move is castle
+        
+        pieces[turn? Piece::W_KING : Piece::B_KING] &= ~move.getFromVal();
+        pieces[turn? Piece::W_KING : Piece::B_KING] |= move.getToVal();
+        switch(piece) {
+            case 6:
+                pieces[Piece::W_ROOK] += 504403158265495552ULL;
+                wLRookSqMoves++; wKingSqMoves++; break;
+            case 7:
+                pieces[Piece::W_ROOK] -= 6917529027641081856ULL;
+                wRRookSqMoves++; wKingSqMoves++; break;
+            case 12:
+                pieces[Piece::B_ROOK] += 7ULL;
+                bLRookSqMoves++; bKingSqMoves++; break;
+            case 13:
+                pieces[Piece::B_ROOK] -= 96ULL;
+                bRRookSqMoves++; bKingSqMoves++; break;
+        }
 
-inline void Board::performMove(Move &move) {
-    // CAPTURES
-    if (move.getCapture() != MoveCapture::NONE) {
-        // remove captured piece (captured piece disappears)
-        pieces[move.getCapture()] ^= move.getToVal();
-        pieces[getNotColor()] ^= move.getToVal();
-        // move capturing piece (piece moved normally)
-        U64 moveXOR = move.getToVal() ^ move.getFromVal();
-        pieces[move.getPiece()] ^= moveXOR;
-        // color update (piece moved normally)
-        pieces[getColor()] ^= moveXOR;
-        // occupancy update (capturing piece disappears)
-        pieces[Piece::OCCUP] ^= move.getFromVal();
-        pieces[Piece::UNOCC] = ~pieces[Piece::OCCUP];
-        return;
+    } else { // move is quiet
+        
+        pieces[piece] &= ~move.getFromVal();
+        pieces[piece] |= move.getToVal();
+
     }
 
-    switch (move.getPiece()) {
-        // PROMOTION
-        case MoveType::KNIGHT_PROMO: 
-        case MoveType::BISHOP_PROMO:
-        case MoveType::QUEEN_PROMO:
-        case MoveType::ROOK_PROMO: {
-            // remove pawn (promo piece disappears)
-            pieces[turn ? Piece::W_PAWN : Piece::B_PAWN] ^= move.getFromVal();
-            // add promo piece (upgraded piece appears)
-            Piece::Piece promo = (Piece::Piece) (move.getPiece() - (turn ? 15U : 9U));
-            pieces[promo] ^= move.getToVal();
-            // color update (piece moves normally)
-            U64 moveXOR = move.getToVal() ^ move.getFromVal();
-            pieces[getColor()] ^= moveXOR;
-            pieces[Piece::OCCUP] ^= moveXOR;
-            break;
-        }
-        // CASTLING
-        case MoveType::WHITE_LEFT_CASTLE: {
-            pieces[Piece::WHITE] ^= 2089670227099910144ULL;
-            pieces[Piece::OCCUP] ^= 2089670227099910144ULL;
-            pieces[Piece::W_KING] ^= 1441151880758558720ULL;
-            pieces[Piece::W_ROOK] ^= 648518346341351424ULL;
-            break;
-        }
-        case MoveType::WHITE_RIGHT_CASTLE: {
-            pieces[Piece::WHITE] ^= 17293822569102704640ULL;
-            pieces[Piece::OCCUP] ^= 17293822569102704640ULL;
-            pieces[Piece::W_KING] ^= 5764607523034234880ULL;
-            pieces[Piece::W_ROOK] ^= 11529215046068469760ULL;
-            break;
-        }
-        case MoveType::BLACK_LEFT_CASTLE: {
-            pieces[Piece::BLACK] ^= 29ULL;
-            pieces[Piece::OCCUP] ^= 29ULL;
-            pieces[Piece::B_KING] ^= 20ULL;
-            pieces[Piece::B_ROOK] ^= 9ULL;
-            break;
-        }
-        case MoveType::BLACK_RIGHT_CASTLE: {
-            pieces[Piece::BLACK] ^= 240ULL;
-            pieces[Piece::OCCUP] ^= 240ULL;
-            pieces[Piece::B_KING] ^= 80ULL;
-            pieces[Piece::B_ROOK] ^= 160ULL;
-            break;
-        }
-        // QUIET: pieces just moves (normal movement)
-        default: {
-            U64 moveXOR = move.getToVal() ^ move.getFromVal();
-            pieces[move.getPiece()] ^= moveXOR;
-            pieces[getColor()] ^= moveXOR;
-            pieces[Piece::OCCUP] ^= moveXOR;
-            break;
-        }
+
+    // deals with castling rights
+    switch (move.getFromSq()) {
+        case 0: bLRookSqMoves++; break;
+        case 7: bRRookSqMoves++; break;
+        case 56: wLRookSqMoves++; break;
+        case 53: wRRookSqMoves++; break;
+        case 4: bKingSqMoves++; break;
+        case 60: wKingSqMoves++; break;
     }
 
-    // update unoccupied board
+    // updates convenience boards
+    if (turn) {
+        pieces[Piece::WHITE] = pieces[Piece::W_PAWN] ^ pieces[Piece::W_KNIGHT] ^ pieces[Piece::W_BISHOP] ^ pieces[Piece::W_ROOK] ^ pieces[Piece::W_QUEEN] ^ pieces[Piece::W_KING];
+    } else {
+        pieces[Piece::BLACK] = pieces[Piece::B_PAWN] ^ pieces[Piece::B_KNIGHT] ^ pieces[Piece::B_BISHOP] ^ pieces[Piece::B_ROOK] ^ pieces[Piece::B_QUEEN] ^ pieces[Piece::B_KING];
+    }
+    pieces[Piece::OCCUP] = pieces[Piece::WHITE] ^ pieces[Piece::BLACK];
     pieces[Piece::UNOCC] = ~pieces[Piece::OCCUP];
+
+    toggleMove();
+    
+}
+
+
+void Board::unmove (Move &move) {
+    toggleMove();
+
+    uint8_t piece = move.getPiece() + (turn? 0 : 6);
+    // eval -= move.evalDiff;
+
+    if (move.getCapture() != 12) { //piece is captured
+
+        //unmove capturing piece
+        pieces[piece] |= move.getFromVal();
+        pieces[piece] &= ~move.getToVal();
+        //place back captured piece
+        pieces[move.getCapture()] |= move.getToVal();
+        pieces[turn? Piece::BLACK : Piece::WHITE] |= move.getToVal();
+        
+    } else if (move.getPiece() >= 8) { // move is promotion
+        
+        pieces[turn? Piece::W_PAWN : Piece::B_PAWN] |= move.getFromVal();
+        pieces[piece-7] &= ~move.getToVal();
+
+    } else if (move.getPiece() >= 6) { // move is castling
+        
+        pieces[turn? Piece::W_KING : Piece::B_KING] |= move.getFromVal();
+        pieces[turn? Piece::W_KING : Piece::B_KING] &= ~move.getToVal();
+        switch(piece) {
+            case 6: // white left castle
+                pieces[Piece::W_ROOK] -= 504403158265495552ULL;
+                wLRookSqMoves--; wKingSqMoves--; break;
+            case 7: // white right castle
+                pieces[Piece::W_ROOK] += 6917529027641081856ULL;
+                wRRookSqMoves--; wKingSqMoves--; break;
+            case 12: // black left castle
+                pieces[Piece::B_ROOK] -= 7ULL;
+                bLRookSqMoves--; bKingSqMoves--; break;
+            case 13: // black right castle
+                pieces[Piece::B_ROOK] += 96ULL;
+                bRRookSqMoves--; bKingSqMoves--; break;
+        }
+
+    } else { // move is quiet, just move normally
+
+        pieces[piece] |= move.getFromVal();
+        pieces[piece] &= ~move.getToVal();
+        
+    }
+
+
+    // deals with castling rights
+    switch (move.getFromSq()) {
+        case 0: bLRookSqMoves--; break;
+        case 7: bRRookSqMoves--; break;
+        case 56: wLRookSqMoves--; break;
+        case 53: wRRookSqMoves--; break;
+        case 4: bKingSqMoves--; break;
+        case 60: wKingSqMoves--; break;
+    }
+
+    // updates convenience boards
+    if (turn) {
+        pieces[Piece::WHITE] = pieces[Piece::W_PAWN] ^ pieces[Piece::W_KNIGHT] ^ pieces[Piece::W_BISHOP] ^ pieces[Piece::W_ROOK] ^ pieces[Piece::W_QUEEN] ^ pieces[Piece::W_KING];
+    } else {
+        pieces[Piece::BLACK] = pieces[Piece::B_PAWN] ^ pieces[Piece::B_KNIGHT] ^ pieces[Piece::B_BISHOP] ^ pieces[Piece::B_ROOK] ^ pieces[Piece::B_QUEEN] ^ pieces[Piece::B_KING];
+    }
+    pieces[Piece::OCCUP] = pieces[Piece::WHITE] ^ pieces[Piece::BLACK];
+    pieces[Piece::UNOCC] = ~pieces[Piece::OCCUP];
+
 }

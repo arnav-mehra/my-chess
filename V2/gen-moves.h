@@ -1,186 +1,172 @@
-#pragma once
+using namespace std;
 
-inline void Board::moveGen(MoveList &moves) {
-    if (getK() == 0ULL || getk() == 0ULL) return; // king precondition
-    // gen moves
+
+void Board::moveGen (vector<Move> &moves) {
+    //king precondition
+    if ((turn? getK() : getk()) == 0) { return; }
+    
+    //gen moves
     genCastlingMoves(moves);
-    genPawnMoves(moves);
-    genKnightMoves(moves);
-    genBishopMoves(moves);
-    genQueenMoves(moves);
-    genRookMoves(moves);
-    genKingMoves(moves);    
-    // moves.sort(); // sort moves
+    genPawnMoves(moves, turn? getP() : getp());
+    genKnightMoves (moves, turn? getN() : getn());
+    genBishopMoves (moves, turn? getB() : getb());
+    genQueenMoves (moves, turn? getQ() : getq());
+    genRookMoves (moves, turn? getR() : getr());
+    genKingMoves (moves, lsb(turn? getK() : getk()));
+    
+    //sort moves
+    sort(moves.begin(), moves.end(), [] (Move& move1, Move& move2) {
+        return move1.priority > move2.priority;
+    });
 }
 
-inline void Board::genPawnMoves(MoveList &moves) {
-    MoveType::Piece piece = turn ? MoveType::W_PAWN : MoveType::B_PAWN;
-    U64 cPawns = pieces[piece];
-    U64 up1 = (turn ? cPawns >> 8 : cPawns << 8) & getUnoccupied();
-    U64 up2 = (turn ? up1 >> 8 : up1 << 8) & getUnoccupied() & getPawnDouble(turn);
 
-    // captures
-    while (cPawns) {
-        U32 fromSq = lsb(cPawns);
-        U64 attacks = getPawnAttacks(turn, fromSq) & getNotColor();
-        while (attacks) {
-            U32 toSq = lsb(attacks);
-            auto capture = getCapturedPiece(toSq);
-            moves.push(Move(piece, capture, fromSq, toSq));
-            attacks &= attacks - 1ULL;
+void Board::genPawnMoves (vector<Move> &moves, uint64_t cPawns) {
+    
+    uint64_t up1 = (turn? cPawns >> 8 : cPawns << 8) & getUnoccupied();
+    uint64_t up2 = (turn? up1 >> 8 : up1 << 8) & getUnoccupied() & getPawnDouble(turn);
+
+    while (cPawns != 0) {
+        uint64_t attacks = getPawnAttacks(turn, lsb(cPawns)) & getNotTurn();
+        while (attacks != 0) {
+            moves.push_back(
+                Move(0, lsb(cPawns), lsb(attacks), getCapturedPiece(lsb(attacks)))
+            );
+        attacks &= attacks-1;
         }
-        cPawns &= cPawns - 1ULL;
+        cPawns &= cPawns-1;
     }
 
-    // forward pawn moves
-    if (turn) {
-        while (up1) {
-            U32 toSq = lsb(up1);
-            U32 fromSq = toSq + 8U;
-            if (toSq < 8U) {
-                moves.push(Move(MoveType::KNIGHT_PROMO, fromSq, toSq));
-                // moves.push(Move(MoveType::BISHOP_PROMO, fromSq, toSq));
-                // moves.push(Move(MoveType::ROOK_PROMO, fromSq, toSq));
-                moves.push(Move(MoveType::QUEEN_PROMO, fromSq, toSq));
-            } else {
-                moves.push(Move(piece, fromSq, toSq));
-            }
-            up1 &= up1 - 1ULL;
+    //pawn forward 2
+    while (up2 != 0) {
+        moves.push_back(Move(0, lsb(up2) + (turn? 16 : -16), lsb(up2)));
+        up2 &= up2-1;
+    }
+
+    //pawn moves 1
+    while (up1 != 0) {
+        uint8_t toSquare = lsb(up1);
+        if (turn? toSquare < 8 : toSquare > 55) {
+            moves.push_back(Move(8, turn? toSquare+8 : toSquare-8, toSquare));
+            // moves.push_back({9, fromSquare, toSquare, -1});
+            // moves.push_back({10, fromSquare, toSquare, -1});
+            moves.push_back(Move(11, turn? toSquare+8 : toSquare-8, toSquare));
+        } else {
+            moves.push_back(Move(0, turn? toSquare+8 : toSquare-8, toSquare));
         }
-        while (up2) {
-            U32 toSq = lsb(up2);
-            U32 fromSq = toSq + 16U;
-            moves.push(Move(piece, fromSq, toSq));
-            up2 &= up2 - 1ULL;
+        up1 &= up1-1;
+    }
+}
+void Board::genCastlingMoves (vector<Move> &moves) {
+    if (turn && wKingSqMoves==0) {
+        if (wLRookSqMoves==0 && canLeftCastle()) {
+            moves.push_back(Move(6, 60, 58));
         }
-    } else {
-        while (up1) {
-            U32 toSq = lsb(up1);
-            U32 fromSq = toSq - 8U;
-            if (toSq > 55U) {
-                moves.push(Move(MoveType::KNIGHT_PROMO, fromSq, toSq));
-                // moves.push(Move(MoveType::BISHOP_PROMO, fromSq, toSq));
-                // moves.push(Move(MoveType::ROOK_PROMO, fromSq, toSq));
-                moves.push(Move(MoveType::QUEEN_PROMO, fromSq, toSq));
-            } else {
-                moves.push(Move(piece, fromSq, toSq));
-            }
-            up1 &= up1 - 1ULL;
+        if (wRRookSqMoves==0 && canRightCastle()) {
+            moves.push_back(Move(7, 60, 62));
         }
-        while (up2) {
-            U32 toSq = lsb(up2);
-            U32 fromSq = toSq - 16U;
-            moves.push(Move(piece, fromSq, toSq));
-            up2 &= up2 - 1ULL;
+    } else if (!turn && bKingSqMoves==0) {
+        if (bLRookSqMoves==0 && canLeftCastle()) {
+            moves.push_back(Move(6, 4, 2));
+        }
+        if (bRRookSqMoves==0 && canRightCastle()) {
+            moves.push_back(Move(7, 4, 6));
         }
     }
 }
-
-inline void Board::genKnightMoves(MoveList &moves) {
-    MoveType::Piece piece = turn ? MoveType::W_KNIGHT : MoveType::B_KNIGHT;
-    U64 cKnights = pieces[piece];
-    while (cKnights) {
-        U32 fromSq = lsb(cKnights);
-        U64 attacks = knightMoves[fromSq] & getNotColor();
-        while (attacks) {
-            U32 toSq = lsb(attacks);
-            auto capture = getCapturedPiece(toSq);
-            moves.push(Move(piece, capture, fromSq, toSq));
-            attacks &= attacks - 1;
+void Board::genKnightMoves (vector<Move> &moves, uint64_t cKnights) {
+    while (cKnights != 0) {
+        uint8_t currSquare = lsb(cKnights);
+        uint64_t attacks = knightMoves[currSquare] & getNotTurn();
+        uint64_t openMoves = knightMoves[currSquare] & getUnoccupied();
+        while (attacks != 0) {
+            moves.push_back(
+                Move(1, currSquare, lsb(attacks), getCapturedPiece(lsb(attacks)))
+            );
+            attacks &= attacks-1;
         }
-        U64 openMoves = knightMoves[fromSq] & getUnoccupied();
-        while (openMoves) {
-            U32 toSq = lsb(openMoves);
-            moves.push(Move(piece, fromSq, toSq));
-            openMoves &= openMoves - 1;
+        while (openMoves != 0) {
+            moves.push_back(Move(1, currSquare, lsb(openMoves)));
+            openMoves &= openMoves-1;
         }
-        cKnights &= cKnights - 1;
+        cKnights &= cKnights-1;
+    }
+}
+void Board::genBishopMoves (vector<Move> &moves, uint64_t cBishops) {
+    while (cBishops != 0) {
+        uint64_t bishopMoves = Bmagic(lsb(cBishops), getOccupied());
+        uint64_t attacks = bishopMoves & getNotTurn();
+        uint64_t openMoves = bishopMoves & getUnoccupied();
+        while (attacks != 0) {
+            moves.push_back(
+                Move(2, lsb(cBishops), lsb(attacks), getCapturedPiece(lsb(attacks)))
+            );
+            attacks &= attacks-1;
+        }
+        while (openMoves != 0) {
+            moves.push_back(Move(2, lsb(cBishops), lsb(openMoves)));
+            openMoves &= openMoves-1;
+        }
+        cBishops &= cBishops-1;
+    }
+}
+void Board::genRookMoves (vector<Move> &moves, uint64_t cRooks) {
+    while (cRooks != 0) {
+        uint64_t rookMoves = Rmagic(lsb(cRooks), getOccupied());
+        uint64_t attacks = rookMoves & getNotTurn();
+        uint64_t openMoves = rookMoves & getUnoccupied();
+        while (attacks != 0) {
+            moves.push_back(
+                Move(3, lsb(cRooks), lsb(attacks), getCapturedPiece(lsb(attacks)))
+            );
+          attacks &= attacks-1;
+        }
+        while (openMoves != 0) {
+          moves.push_back(Move(3, lsb(cRooks), lsb(openMoves)));
+          openMoves &= openMoves-1;
+        }
+        cRooks &= cRooks-1;
+    }
+}
+void Board::genQueenMoves (vector<Move> &moves, uint64_t cQueens) {
+    while (cQueens != 0) {
+        uint8_t currSquare = lsb(cQueens);
+        uint64_t queenMoves = Bmagic(currSquare, getOccupied()) ^ Rmagic(currSquare, getOccupied());
+        uint64_t attacks = queenMoves & getNotTurn();
+        uint64_t openMoves = queenMoves & getUnoccupied();
+        while (attacks != 0) {
+            moves.push_back(
+                Move(4, currSquare, lsb(attacks), getCapturedPiece(lsb(attacks)))
+            );
+            attacks &= attacks-1;
+        }
+        while (openMoves != 0) {
+            moves.push_back(Move(4, currSquare, lsb(openMoves)));
+            openMoves &= openMoves-1;
+        }
+        cQueens &= cQueens-1;
+    }
+}
+void Board::genKingMoves (vector<Move> &moves, uint8_t kingSquare) {
+    uint64_t attacks = kingMoves[kingSquare] & getNotTurn();
+    uint64_t openMoves = kingMoves[kingSquare] & getUnoccupied();
+    while (attacks != 0) {
+        moves.push_back(
+            Move(5, kingSquare, lsb(attacks), getCapturedPiece(lsb(attacks)))
+        );
+        attacks &= attacks-1;
+    }
+    while (openMoves != 0) {
+        moves.push_back(Move(5, kingSquare, lsb(openMoves)));
+        openMoves &= openMoves-1;
     }
 }
 
-inline void Board::genBishopMoves(MoveList &moves) {
-    MoveType::Piece piece = turn ? MoveType::W_BISHOP : MoveType::B_BISHOP;
-    U64 cBishops = pieces[piece];
-    while (cBishops) {
-        U32 fromSq = lsb(cBishops);
-        U64 bishopMoves = Bmagic(fromSq, getOccupied());
-        U64 attacks = bishopMoves & getNotColor();
-        while (attacks) {
-            U32 toSq = lsb(attacks);
-            auto capture = getCapturedPiece(toSq);
-            moves.push(Move(piece, capture, fromSq, toSq));
-            attacks &= attacks - 1;
-        }
-        U64 openMoves = bishopMoves & getUnoccupied();
-        while (openMoves) {
-            U32 toSq = lsb(openMoves);
-            moves.push(Move(piece, fromSq, toSq));
-            openMoves &= openMoves - 1;
-        }
-        cBishops &= cBishops - 1;
-    }
-}
 
-inline void Board::genRookMoves(MoveList &moves) {
-    MoveType::Piece piece = turn ? MoveType::W_ROOK : MoveType::B_ROOK;
-    U64 cRooks = pieces[piece];
-    while (cRooks) {
-        U32 fromSq = lsb(cRooks);
-        U64 rookMoves = Rmagic(fromSq, getOccupied());
-        U64 attacks = rookMoves & getNotColor();
-        while (attacks) {
-            U32 toSq = lsb(attacks);
-            auto capture = getCapturedPiece(toSq);
-            moves.push(Move(piece, capture, fromSq, toSq));
-            attacks &= attacks - 1;
-        }
-        U64 openMoves = rookMoves & getUnoccupied();
-        while (openMoves) {
-            U32 toSq = lsb(openMoves);
-            moves.push(Move(piece, fromSq, toSq));
-            openMoves &= openMoves - 1;
-        }
-        cRooks &= cRooks - 1;
-    }
-}
 
-inline void Board::genQueenMoves(MoveList &moves) {
-    MoveType::Piece piece = turn ? MoveType::W_QUEEN : MoveType::B_QUEEN;
-    U64 cQueens = pieces[piece];
-    while (cQueens) {
-        U32 currSquare = lsb(cQueens);
-        U64 queenMoves = Qmagic(currSquare, getOccupied());
-        U64 attacks = queenMoves & getNotColor();
-        while (attacks) {
-            U32 toSq = lsb(attacks);
-            auto capture = getCapturedPiece(toSq);
-            moves.push(Move(piece, capture, currSquare, toSq));
-            attacks &= attacks - 1;
-        }
-        U64 openMoves = queenMoves & getUnoccupied();
-        while (openMoves) {
-            U32 toSq = lsb(openMoves);
-            moves.push(Move(piece, currSquare, toSq));
-            openMoves &= openMoves - 1;
-        }
-        cQueens &= cQueens - 1;
-    }
-}
 
-inline void Board::genKingMoves(MoveList &moves) {
-    MoveType::Piece piece = turn ? MoveType::W_KING : MoveType::B_KING;
-    U32 fromSq = lsb(pieces[piece]);
-    U64 attacks = kingMoves[fromSq] & getNotColor();
-    while (attacks) {
-        U32 toSq = lsb(attacks);
-        auto capture = getCapturedPiece(toSq);
-        moves.push(Move(piece, capture, fromSq, toSq));
-        attacks &= attacks - 1;
-    }
-    U64 openMoves = kingMoves[fromSq] & getUnoccupied();
-    while (openMoves) {
-        U32 toSq = lsb(openMoves);
-        moves.push(Move(piece, fromSq, toSq));
-        openMoves &= openMoves - 1;
-    }
-}
+
+
+
+
+

@@ -1,7 +1,5 @@
 using namespace std;
 
-
-
 void printGrid (uint64_t num) {
   for (int i=0; i<64; i++) {
     cout << num%2 << " ";
@@ -65,7 +63,7 @@ void printMove(Move &m) {
   char p = pieceChars[m.piece];
   int f = m.fromSq, t = m.toSq;
 
-  if (m.capture != 12) {
+  if (m.capture != -1) {
     cout << p << 'x' << letters[t%8] << 8-t/8 << '\n';
   } else {
     cout << p << letters[t%8] << 8-t/8 << '\n';

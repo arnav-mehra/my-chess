@@ -1,7 +1,10 @@
-#pragma once
+#ifndef PIECE_H
+#define PIECE_H
+
 
 namespace Piece {
-    enum Piece : int {
+    
+    enum Piece : unsigned int {
         W_PAWN = 0,
         W_KNIGHT = 1,
         W_BISHOP = 2,
@@ -27,50 +30,23 @@ namespace Piece {
     };
 };
 
-namespace MoveType { // note: color = turn
-    enum Piece : U32 {
-        W_PAWN = 0,
-        W_KNIGHT = 1,
-        W_BISHOP = 2,
-        W_ROOK = 3,
-        W_QUEEN = 4,
-        W_KING = 5,
-        B_PAWN = 6,
-        B_KNIGHT = 7,
-        B_BISHOP = 8,
-        B_ROOK = 9,
-        B_QUEEN = 10,
-        B_KING = 11,
-
-        WHITE_LEFT_CASTLE = 12,
-        WHITE_RIGHT_CASTLE = 13,
-        BLACK_LEFT_CASTLE = 14,
-        BLACK_RIGHT_CASTLE = 15,
-
-        KNIGHT_PROMO = 16,
-        BISHOP_PROMO = 17,
-        ROOK_PROMO = 18,
-        QUEEN_PROMO = 19,
-
-        GAMEOVER = 20
-    };
-};
-
-namespace MoveCapture { // note: color = !turn
-    enum Piece : int {
-        W_PAWN = 0,
-        W_KNIGHT = 1,
-        W_BISHOP = 2,
-        W_ROOK = 3,
-        W_QUEEN = 4,
-        W_KING = 5,
-        B_PAWN = 6,
-        B_KNIGHT = 7,
-        B_BISHOP = 8,
-        B_ROOK = 9,
-        B_QUEEN = 10,
-        B_KING = 11,
-
+namespace MoveType {
+    enum MoveType : unsigned int {
+        PAWN = 0,
+        KNIGHT = 1,
+        BISHOP = 2,
+        ROOK = 3,
+        QUEEN = 4,
+        KING = 5,
+        LEFT_CASTLE = 6,
+        RIGHT_CASTLE = 7,
+        KNIGHT_PROMO = 8,
+        BISHOP_PROMO = 9,
+        ROOK_PROMO = 10,
+        QUEEN_PROMO = 11,
         NONE = 12
     };
 };
+
+
+#endif
