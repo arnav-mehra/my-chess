@@ -207,18 +207,18 @@ U64 _perft(Board &b, int depth, PerftStats &ps) {
     }
 
     MoveList& ml = ps.ml[depth];
-    ml.clear(); b.gen_moves<Color, Gen::LEGALS>(ml);
+    ml.clear(); b.gen_moves<Color, Gen::PSEUDOS>(ml);
 
     U64 cnt = 0;
     for (int i = 0; i < ml.size(); i++) {
         b.do_move<Color>(ml[i]);
-        // if (b.get_checks<Color>() == 0ULL) { // filter out illegal moves
+        if (b.get_checks<Color>() == 0ULL) { // filter out illegal moves
             // ps.flag_hist[(int)ml[i].get_flag()]++;
             int res = turn ? _perft<Black>(b, depth - 1, ps)
                            : _perft<White>(b, depth - 1, ps);
-        //     if (depth == ps.init_depth) ps.add_move(ml[i], res);
+            if (depth == ps.init_depth) ps.add_move(ml[i], res);
             cnt += res;
-        // }
+        }
         b.undo_move<Color>(ml[i]);
     }
 
@@ -226,18 +226,66 @@ U64 _perft(Board &b, int depth, PerftStats &ps) {
     return cnt;
 }
 
-template<class Color>
-void perft(Board &b, int depth, std::string fin_hist = "") {
-    bool WITH_CMP = fin_hist.size() != 0;
+void read_solution_file(
+    std::string fname,
+    std::unordered_map<std::string, int> &solution_hist,
+    bool CMP_TO_SOLUTION
+) {
+    if (!CMP_TO_SOLUTION) return;
 
-    std::unordered_map<std::string, int> sol_hist;
-    if (WITH_CMP) {
-        std::ifstream infile(fin_hist);
-        std::string move; int cnt;
-        while (infile >> move >> cnt) {
-            sol_hist.insert({move, cnt});
+    std::ifstream infile(fname);
+    std::string move; int cnt;
+    while (infile >> move >> cnt) {
+        solution_hist.insert({move, cnt});
+    }
+}
+
+void print_hist_output(
+    PerftStats &ps,
+    std::unordered_map<std::string, int> &solution_hist,
+    bool CMP_TO_SOLUTION
+) {
+    std::unordered_map<std::string, int> my_hist;
+
+    for (int i = 0; i < 64 * 64 * 8; i++) {
+        int cnt = ps.move_hist[i];
+        if (cnt == 0) continue;
+
+        std::string str = square_num_to_string((i >> 6) & 0b111111)
+                        + square_num_to_string(i & 0b111111);
+        char piece_char_map[5] = {' ', 'n', 'b', 'r', 'q'};
+        if ((i >> 12) != 0) str += piece_char_map[i >> 12];
+        str += ":";
+
+        my_hist[str] = cnt;
+
+        if (CMP_TO_SOLUTION) {
+            if (solution_hist.find(str) == solution_hist.end()) {
+                std::cout << str << " " << cnt << " vs 0\n";
+            } else if (solution_hist[str] != cnt) {
+                std::cout << str << " " << cnt << " vs " << solution_hist[str] << '\n'; 
+            }
         }
     }
+
+    if (CMP_TO_SOLUTION) {
+        for (auto& [move, cnt] : solution_hist) {
+            if (my_hist.find(move) == my_hist.end()) {
+                std::cout << move << " 0 vs " << cnt << "\n";
+            }
+        }
+    }
+}
+
+template<class Color>
+void perft(
+    Board &b,
+    int depth,
+    std::string solution_file = ""
+) {
+    bool CMP_TO_SOLUTION = solution_file.size() != 0;
+    std::unordered_map<std::string, int> solution_hist;
+    read_solution_file(solution_file, solution_hist, CMP_TO_SOLUTION);
 
     PerftStats ps; ps.init_depth = depth;
 
@@ -257,34 +305,7 @@ void perft(Board &b, int depth, std::string fin_hist = "") {
     //     std::cout << FLAG_NAMES[i] << ": " << ps.flag_hist[i] << '\n'; 
     // } std::cout << '\n';
 
-    std::unordered_map<std::string, int> my_hist;
-    for (int i = 0; i < 64 * 64 * 8; i++) {
-        int cnt = ps.move_hist[i];
-        if (cnt == 0) continue;
+    print_hist_output(ps, solution_hist, CMP_TO_SOLUTION);
 
-        std::string str = square_num_to_string((i >> 6) & 0b111111)
-                        + square_num_to_string(i & 0b111111);
-        char pp[5] = {' ', 'n', 'b', 'r', 'q'};
-        if ((i >> 12) != 0) str += pp[i >> 12];
-        str += ":";
-
-        my_hist[str] = cnt;
-
-        if (WITH_CMP) {
-            if (sol_hist.find(str) == sol_hist.end()) {
-                std::cout << str << " " << cnt << " vs 0\n";
-            } else if (sol_hist[str] != cnt) {
-                std::cout << str << " " << cnt << " vs " << sol_hist[str] << '\n'; 
-            }
-        }
-    }
-
-    if (WITH_CMP) {
-        for (auto& [move, cnt] : sol_hist) {
-            if (my_hist.find(move) == my_hist.end()) {
-                std::cout << move << " 0 vs " << cnt << "\n";
-            }
-        }
-    }
     std::cout << "\nNodes searched: " << res << '\n';    
 }

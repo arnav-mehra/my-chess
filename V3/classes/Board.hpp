@@ -36,26 +36,32 @@ public:
 
     template<class, Gen>
     void gen_moves(MoveList &ml);
+    
+    // other.hpp
+    
+    template<class> U64 get_checks();
 
     // getters
 
     template<typename Sq>
-    constexpr Piece& get_board(Sq sq) {
+    Piece& get_board(Sq sq) {
         return this->board[(int)sq];
     }
 
     template<typename Pc>
-    constexpr U64& get_bitboard(Pc pc) {
+    U64& get_bitboard(Pc pc) {
         return this->bitboards[(int)pc];
     }
 
     template<typename Sq>
-    constexpr int& get_from_cnt(Sq sq) {
+    int& get_from_cnt(Sq sq) {
         return this->from_hist[(int)sq];
     }
 
-    constexpr bool get_en_passant() { return this->en_passant; }
-    
+    int get_en_passant() {
+        return this->en_passant;
+    }
+
 private:
 
     // gen_moves.hpp
@@ -90,7 +96,6 @@ private:
 
     // other.hpp
 
-    template<class> U64 get_checks();
     template<class> U64 get_opp_attacks();
     template<class> U64 get_check_blocks(U64 checks);
     template<class> U64 get_pins();

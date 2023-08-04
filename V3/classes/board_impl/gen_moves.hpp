@@ -3,7 +3,7 @@
 #include "../../util/mapped_moves.hpp"
 #include "../../util/kmagics.hpp"
 
-// PAWNS
+// PAWNS: singles, doubles, promos, captures, promo-captures
 
 template<class Color, Gen Gn>
 void Board::gen_pawn_moves(MoveList &moves, U64 filter) {
@@ -36,9 +36,10 @@ void Board::gen_pawn_moves(MoveList &moves, U64 filter) {
     }
 
     if constexpr (Gn == Gen::CAPTURES || Gn == Gen::BLOCKS) {
-        U64 opp = this->bitboards[(int)Color::OPP_ALL] | (1ULL << this->en_passant);
-        U64 non_left_opp  = opp & filter & NON_LEFT_PIECES;
-        U64 non_right_opp = opp & filter & NON_RIGHT_PIECES;
+        filter |= 1ULL << this->en_passant; // pawns can also capture en_passant
+        
+        U64 non_left_opp  = filter & NON_LEFT_PIECES;
+        U64 non_right_opp = filter & NON_RIGHT_PIECES;
 
         U64 left_caps  = shift<(int)Color::FORWARD_LEFT >(reg_pawns) & non_right_opp;
         U64 right_caps = shift<(int)Color::FORWARD_RIGHT>(reg_pawns) & non_left_opp;
@@ -147,8 +148,8 @@ void Board::gen_moves(MoveList &moves, U64 filter) {
 template<class Color, Gen Gn>
 void Board::gen_moves(MoveList &moves) {
     if constexpr (Gn == Gen::QUIETS) {
-        U64 filter = ~this->bitboards[(int)Piece::ALL];
-        this->gen_moves<Color, Gen::QUIETS  >(moves, filter);
+        U64 filter = ~this->get_bitboard(Piece::ALL);
+        this->gen_moves<Color, Gen::QUIETS>(moves, filter);
 
         if (this->get_checks<Color>() == 0ULL) {
             this->gen_castle<Color, typename Color::OO >(moves);
@@ -157,7 +158,7 @@ void Board::gen_moves(MoveList &moves) {
     }
 
     if constexpr (Gn == Gen::CAPTURES) {
-        U64 filter = this->bitboards[(int)Color::OPP_ALL];
+        U64 filter = this->get_bitboard(Color::OPP_ALL);
         this->gen_moves<Color, Gen::CAPTURES>(moves, filter);
     }
 
