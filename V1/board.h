@@ -241,6 +241,7 @@ class Board {
       }
       setBoard(boardStr);
     }
+    
     void printBoard () {
       uint64_t currSquare = 1ULL;
       cout << '\n';

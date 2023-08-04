@@ -19,18 +19,19 @@ int main() {
 
   Board b;
   
-  // b.setBoardFen(
-  //   "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
-  //   // "rnbqk2r/pppp2pp/5p2/4p3/3Pn3/2P1PP2/PP4PP/RNBQK1NR"
-  // );
+  b.setBoardFen(
+    "r1bqkbnr/pppppppp/2n5/8/8/2N5/PPPPPPPP/R1BQKBNR"
+    // "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+    // "rnbqk2r/pppp2pp/5p2/4p3/3Pn3/2P1PP2/PP4PP/RNBQK1NR"
+  );
   
   
   
   // b.setBoardFen(
   //   "r1b2rk1/pp1q1ppp/3b4/6B1/1p1p4/1QnP1N2/P3BPPP/2R2RK1"
   // );
-  b.initializeBoard();
-  b.printBoard();
+  // b.initializeBoard();
+  // b.printBoard();
 
   Search s(b);
   // cout << s.perft(4, true) << '\n';
