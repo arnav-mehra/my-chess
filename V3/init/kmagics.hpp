@@ -2,9 +2,11 @@
 // https://www.talkchess.com/forum3/viewtopic.php?f=7&t=69947\
 
 #pragma once
-#include "types.hpp"
-#include "data.hpp"
-#include "util.hpp"
+
+#include "../util/types.hpp"
+#include "../util/data.hpp"
+#include "../util/util.hpp"
+#include "../util/assertion.hpp"
 
 #define COLLISION_DETECTION false
 

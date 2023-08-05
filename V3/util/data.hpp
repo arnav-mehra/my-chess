@@ -1,15 +1,7 @@
 #pragma once
+
 #include "types.hpp"
 #include <string>
-
-// 00 01 02 03 04 05 06 07
-// 08 09 10 11 12 13 14 15
-// 16 17 18 19 20 21 22 23
-// 24 25 26 27 28 29 30 31
-// 32 33 34 35 36 37 38 39
-// 40 41 42 43 44 45 46 47
-// 48 49 50 51 52 53 54 55
-// 56 57 58 59 60 61 62 63
 
 #define NUM_SQUARES 64
 #define NUM_BITBOARDS 16
@@ -87,7 +79,7 @@ class White { public:
         static Square NON_CHECKS[3];
         static U64 KNIGHT_RISKS;
         static U64 PAWN_RISKS;
-        static Flag FLAG;
+        const static Flag FLAG;
 
         enum Squares : Square {
             KING_PRE  = 60,
@@ -108,7 +100,7 @@ class White { public:
         static Square NON_CHECKS[3];
         static U64 KNIGHT_RISKS;
         static U64 PAWN_RISKS;
-        static Flag FLAG;
+        const static Flag FLAG;
 
         enum Squares : Square {
             ROOK_PRE  = 56,
@@ -169,7 +161,7 @@ class Black { public:
         static Square NON_CHECKS[3];
         static U64 KNIGHT_RISKS;
         static U64 PAWN_RISKS;
-        static Flag FLAG;
+        const static Flag FLAG;
 
         enum Squares : Square {
             KING_PRE  = 04,
@@ -190,7 +182,7 @@ class Black { public:
         static Square NON_CHECKS[3];
         static U64 KNIGHT_RISKS;
         static U64 PAWN_RISKS;
-        static Flag FLAG;
+        const static Flag FLAG;
 
         enum Squares : Square {
             ROOK_PRE  = 00,
@@ -249,8 +241,8 @@ class Black { public:
 U64 White::PAWN_ATTACKS[64];
 U64 Black::PAWN_ATTACKS[64];
 
-Flag White::OO::FLAG = Flag::SHORT_CASTLE;
-Flag White::OOO::FLAG = Flag::LONG_CASTLE;
+const Flag White::OO::FLAG = Flag::SHORT_CASTLE;
+const Flag White::OOO::FLAG = Flag::LONG_CASTLE;
 Square White::OO::NON_CHECKS[3] = { 60, 61, 62 };
 U64 White::OO::KNIGHT_RISKS;
 U64 White::OO::PAWN_RISKS;
@@ -258,8 +250,8 @@ Square White::OOO::NON_CHECKS[3] = { 60, 59, 58 };
 U64 White::OOO::KNIGHT_RISKS;
 U64 White::OOO::PAWN_RISKS;
 
-Flag Black::OO::FLAG = Flag::SHORT_CASTLE;
-Flag Black::OOO::FLAG = Flag::LONG_CASTLE;
+const Flag Black::OO::FLAG = Flag::SHORT_CASTLE;
+const Flag Black::OOO::FLAG = Flag::LONG_CASTLE;
 Square Black::OO::NON_CHECKS[3] = { 4, 5, 6 };
 U64 Black::OO::KNIGHT_RISKS;
 U64 Black::OO::PAWN_RISKS;

@@ -1,6 +1,7 @@
 #pragma once
-#include "types.hpp"
-#include "data.hpp"
+
+#include "../util/types.hpp"
+#include "../util/data.hpp"
 #include <vector>
 
 namespace MAPPED_MOVES {

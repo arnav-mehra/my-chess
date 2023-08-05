@@ -1,6 +1,6 @@
 #pragma once
 #include "../util/types.hpp"
-#include "MoveList.hpp"
+#include "../move/MoveList.hpp"
 #include <string>
 #include <cstdio>
 #include <array>

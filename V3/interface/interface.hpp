@@ -1,6 +1,7 @@
 #pragma once
-#include "../Board.hpp"
-#include "test.hpp"
+
+#include "../board/impl/index.hpp"
+#include "../util/conversion.hpp"
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -169,7 +170,11 @@ void CLI(std::string fen_str) {
         std::cout << PIECE_NAMES[(int)b.get_board(from)] << ' ';        
         Flag flag = turn ? b.derive_flag<White>(from, to)
                          : b.derive_flag<Black>(from, to);
-        Move move = Move(flag, from, to);
+        Move move = Move(
+            flag,
+            b.get_board(from), b.get_board(to),
+            from, to
+        );
         move.print();
 
         if (turn) b.do_move<White>(move);

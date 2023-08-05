@@ -3,12 +3,12 @@
 #include <map>
 #include <fstream>
 
-#include "classes/board_impl/interface.hpp"
-#include "classes/board_impl/do_move.hpp"
-#include "classes/board_impl/undo_move.hpp"
-#include "classes/board_impl/gen_moves.hpp"
-#include "classes/board_impl/other.hpp"
-#include "util/init.hpp"
+#include "interface/interface.hpp"
+#include "board/impl/index.hpp"
+#include "init/init.hpp"
+#include "search/evaluate.hpp"
+#include "search/search.hpp"
+#include "tests/perft.hpp"
 
 using namespace std;
 
@@ -25,6 +25,9 @@ static Board b;
 
 int main(int argc, char** argv) {
     init();
+    
     b.from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
-    perft<White>(b, 6);
+    auto [ move, eval ] = Search::search<White>(b, 3);
+    cout << "EVAL: " << eval;
+    // perft<White>(b, 6);
 }

@@ -1,4 +1,6 @@
-#include "data.hpp"
+#pragma once
+
+#include "../util/data.hpp"
 #include "kmagics.hpp"
 #include "mapped_moves.hpp"
 

@@ -31,7 +31,7 @@ enum class Piece : Square { // 4 bits
     ALL = 14,
     GARBAGE = 15,
 
-    NA = 0
+    NA = 15
 };
 
 enum class Flag : Square { // colors tested for

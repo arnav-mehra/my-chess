@@ -1,7 +1,7 @@
 #pragma once
+
 #include "../Board.hpp"
-#include "../../util/mapped_moves.hpp"
-#include "../../util/kmagics.hpp"
+#include "../../init/init.hpp"
 
 // PAWNS: singles, doubles, promos, captures, promo-captures
 
@@ -23,11 +23,12 @@ void Board::gen_pawn_moves(MoveList &moves, U64 filter) {
         while (singles) {
             Square to = pop_lsb(singles);
             Square from = to - Color::FORWARD;
-            moves.add_quiet(from, to);
+            moves.add(Move::make<Flag::QUIET>((Piece)Color::PAWN, Piece::NA, from, to));
         }
         while (doubles) {
             Square to = pop_lsb(doubles);
-            moves.add_pawn_double(to);
+            Square from = to - 2 * Color::FORWARD;
+            moves.add(Move::make<Flag::PAWN_DOUBLE>((Piece)Color::PAWN, Piece::NA, from, to));
         }
         while (promos) {
             Square to = pop_lsb(promos);
@@ -37,7 +38,7 @@ void Board::gen_pawn_moves(MoveList &moves, U64 filter) {
 
     if constexpr (Gn == Gen::CAPTURES || Gn == Gen::BLOCKS) {
         filter |= 1ULL << this->en_passant; // pawns can also capture en_passant
-        
+
         U64 non_left_opp  = filter & NON_LEFT_PIECES;
         U64 non_right_opp = filter & NON_RIGHT_PIECES;
 
@@ -47,14 +48,20 @@ void Board::gen_pawn_moves(MoveList &moves, U64 filter) {
         while (left_caps) {
             Square to = pop_lsb(left_caps);
             Square from = to - (int)Color::FORWARD_LEFT;
-            Flag flag = (Flag)((to == this->en_passant) + 1);
-            moves.add_move(flag, from, to);
+            if (to == this->en_passant) {
+                moves.add(Move::make<Flag::EN_PASSANT>((Piece)Color::PAWN, (Piece)Color::OPP_PAWN, from, to));
+            } else {
+                moves.add(Move::make<Flag::CAPTURE>((Piece)Color::PAWN, this->get_board(to), from, to));
+            }
         }
         while (right_caps) {
             Square to = pop_lsb(right_caps);
             Square from = to - (int)Color::FORWARD_RIGHT;
-            Flag flag = (Flag)((to == this->en_passant) + 1);
-            moves.add_move(flag, from, to);
+            if (to == this->en_passant) {
+                moves.add(Move::make<Flag::EN_PASSANT>((Piece)Color::PAWN, (Piece)Color::OPP_PAWN, from, to));
+            } else {
+                moves.add(Move::make<Flag::CAPTURE>((Piece)Color::PAWN, this->get_board(to), from, to));
+            }
         }
 
         U64 left_cap_promos  = shift<(int)Color::FORWARD_LEFT >(promo_pawns) & non_right_opp;
@@ -96,7 +103,9 @@ void Board::_gen_piece_moves(MoveList &moves, U64 filter, Square from_sq) {
     U64 to_bb = attacks & filter;
     while (to_bb) {
         Square to_sq = pop_lsb(to_bb);
-        moves.add_move<Fg>(from_sq, to_sq);
+        moves.add(
+            Move::make<Fg>(Pc, this->get_board(to_sq), from_sq, to_sq)
+        );
     }
 }
 
