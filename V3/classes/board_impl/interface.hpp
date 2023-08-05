@@ -169,7 +169,7 @@ void CLI(std::string fen_str) {
         std::cout << PIECE_NAMES[(int)b.get_board(from)] << ' ';        
         Flag flag = turn ? b.derive_flag<White>(from, to)
                          : b.derive_flag<Black>(from, to);
-        Move move = Move(flag, from, to);
+        Move move = Move();
         move.print();
 
         if (turn) b.do_move<White>(move);

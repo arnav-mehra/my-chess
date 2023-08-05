@@ -4,16 +4,67 @@
 #include "../util/util.hpp"
 #include <iostream>
 
+int get_move_score(Flag flag, Piece pc, Piece capt) {
+    return 0;
+    int vals[16] = { 1, 3, 5, 9, 20, 1, 3, 5, 9, 20 };
+    switch (flag) {
+        case Flag::QUIET:
+        case Flag::EN_PASSANT:
+        case Flag::PAWN_DOUBLE:
+        case Flag::SHORT_CASTLE:
+        case Flag::LONG_CASTLE:  return 32;
+
+        case Flag::KNIGHT_PROMO: return 32 + vals[(int)Piece::WHITE_KNIGHT] - 1;
+        case Flag::BISHOP_PROMO: return 32 + vals[(int)Piece::WHITE_BISHOP] - 1;
+        case Flag::ROOK_PROMO:   return 32 + vals[(int)Piece::WHITE_ROOK] - 1;
+        case Flag::QUEEN_PROMO:  return 32 + vals[(int)Piece::WHITE_QUEEN] - 1;
+
+        case Flag::CAPTURE:  
+        case Flag::KNIGHT_PROMO_CAPTURE:
+        case Flag::BISHOP_PROMO_CAPTURE:
+        case Flag::ROOK_PROMO_CAPTURE:
+        case Flag::QUEEN_PROMO_CAPTURE: return 32 + vals[(int)capt] - vals[(int)pc];
+    }
+    return 32;
+}
+
+template<Flag flag>
+int get_move_score(Piece pc, Piece capt) {
+    return 0;
+    return get_move_score(flag, pc, capt);
+}
+
 class Move {
     U32 data; // [----SC----|CAPT|-FROM-|--TO--|FLAG]
 
 public:
     Move() {}
 
-    Move(Flag flag, Square from, Square to) {
-        data = ((U32)from << 10)
-             | ((U32)to << 4)
-             | (U32)flag;
+    Move(U32 data) {
+        this->data = data;
+    }
+
+    template<Flag flag>
+    static Move make(Piece pc, Piece capt, Square from, Square to) {
+        U32 score = get_move_score<flag>(pc, capt);
+        return Move(
+              ((U32)score << 20)
+            | ((U32)capt << 16)
+            | ((U32)from << 10)
+            | ((U32)to << 4)
+            | ((U32)flag)
+        );
+    }
+
+    Move(Flag flag, Piece pc, Piece capt, Square from, Square to) {
+        U32 score = get_move_score(flag, pc, capt);
+        this->data = (
+              ((U32)score << 20)
+            | ((U32)capt << 16)
+            | ((U32)from << 10)
+            | ((U32)to << 4)
+            | ((U32)flag)
+        );
     }
 
     Piece get_capture() {

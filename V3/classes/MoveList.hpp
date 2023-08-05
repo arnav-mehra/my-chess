@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Move.hpp"
 #include <array>
 
@@ -13,45 +14,29 @@ public:
         move_list[cnt++] = m;
     }
 
-    template<Flag flag>
-    void add_move(Square from, Square to) {
-        this->add(Move(flag, from, to));
-    }
-
-    void add_move(Flag flag, Square from, Square to) {
-        this->add(Move(flag, from, to));
-    }
-
     template<class Castle>
     void add_castle(bool can_castle) {
-        this->move_list[cnt] = Move(Castle::FLAG, Castle::KING_PRE, Castle::KING_POST);
+        this->move_list[cnt] = Move::make<(Flag)Castle::FLAG>(
+            Piece::GARBAGE,
+            Piece::GARBAGE,
+            Castle::KING_PRE,
+            Castle::KING_POST
+        );
         cnt += can_castle;
     }
 
-    void add_quiet(Square from, Square to) {
-        this->add(Move(Flag::QUIET, from, to));
-    }
-
-    void add_capture(Square from, Square to) {
-        this->add(Move(Flag::CAPTURE, from, to));
-    }
-
-    void add_pawn_double(Square to) {
-        this->add(Move(Flag::PAWN_DOUBLE, 0, to));
-    }
-    
     void add_promos(Square to) {    
-        this->add(Move(Flag::QUEEN_PROMO,  0, to));
-        this->add(Move(Flag::ROOK_PROMO,   0, to));
-        this->add(Move(Flag::BISHOP_PROMO, 0, to));
-        this->add(Move(Flag::KNIGHT_PROMO, 0, to));
+        this->add(Move::make<Flag::QUEEN_PROMO> (Piece::NA, Piece::NA, 0, to));
+        this->add(Move::make<Flag::ROOK_PROMO>  (Piece::NA, Piece::NA, 0, to));
+        this->add(Move::make<Flag::BISHOP_PROMO>(Piece::NA, Piece::NA, 0, to));
+        this->add(Move::make<Flag::KNIGHT_PROMO>(Piece::NA, Piece::NA, 0, to));
     }
 
     void add_promo_captures(Square from, Square to) {
-        this->add(Move(Flag::QUEEN_PROMO_CAPTURE,  from, to));
-        this->add(Move(Flag::ROOK_PROMO_CAPTURE,   from, to));
-        this->add(Move(Flag::BISHOP_PROMO_CAPTURE, from, to));
-        this->add(Move(Flag::KNIGHT_PROMO_CAPTURE, from, to));
+        this->add(Move::make<Flag::QUEEN_PROMO_CAPTURE> (Piece::NA, Piece::NA, from, to));
+        this->add(Move::make<Flag::ROOK_PROMO_CAPTURE>  (Piece::NA, Piece::NA, from, to));
+        this->add(Move::make<Flag::BISHOP_PROMO_CAPTURE>(Piece::NA, Piece::NA, from, to));
+        this->add(Move::make<Flag::KNIGHT_PROMO_CAPTURE>(Piece::NA, Piece::NA, from, to));
     }
 
     void clear() {
