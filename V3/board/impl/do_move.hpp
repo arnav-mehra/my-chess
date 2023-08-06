@@ -82,7 +82,6 @@ void Board::do_promo(Move& m) {
 template<class Color, Piece promo_piece>
 void Board::do_promo_capture(Move& m) {
     Piece capture = this->board[m.get_to()];
-    m.set_capture(capture);
     this->board[(int)m.get_from()] = Piece::GARBAGE;
     this->board[(int)m.get_to()] = promo_piece;
 

@@ -63,60 +63,30 @@ public:
         this->data = data;
     }
 
-    template<Flag flag>
-    static Move make(Piece pc, Piece capt, Square from, Square to) {
-        U32 score = get_move_score<flag>(pc, capt);
-        return Move(
-              ((U32)score << 20)
-            | ((U32)capt << 16)
-            | ((U32)from << 10)
-            | ((U32)to << 4)
-            | ((U32)flag)
-        );
-    }
-
-    Move(Flag flag, Piece pc, Piece capt, Square from, Square to) {
-        U32 score = get_move_score(flag, pc, capt);
+    Move(U32 score, Piece capt, Square from, Square to, Flag flag) {
         this->data = (
               ((U32)score << 20)
             | ((U32)capt << 16)
-            | ((U32)from << 10)
-            | ((U32)to << 4)
-            | ((U32)flag)
+            | ((U32)flag << 12)
+            | ((U32)from << 6)
+            | ((U32)to)
         );
     }
 
-    Piece get_capture() {
-        return (Piece)((data >> 16) & 0b1111);
+    template<Flag flag>
+    static Move make(Piece pc, Piece capt, Square from, Square to) {
+        U32 score = get_move_score<flag>(pc, capt);
+        return Move(score, capt, from, to, flag);
     }
 
-    void set_capture(Piece pc) {
-        data |= ((U32)pc) << 16;
-    }
+    Piece  get_capture() { return (Piece)((data >> 16) & 0b1111  ); }
+    Flag   get_flag()    { return (Flag )((data >> 12) & 0b1111  ); }
+    Square get_from()    { return (U32  )((data >> 6)  & 0b111111); }
+    Square get_to()      { return (U32  )((data >> 0)  & 0b111111); }
+    U32    get_raw()     { return data; }
 
-    Square get_from() { 
-        return (data >> 10) & 0b111111;
-    }
-
-    Square get_to() {
-        return (data >> 4) & 0b111111;
-    }
-
-    U64 get_from_bit() {
-        return 1ULL << this->get_from();
-    }
-
-    U64 get_to_bit() {
-        return 1ULL << this->get_to();
-    }
-
-    Flag get_flag() {
-        return (Flag)(data & 0b1111);
-    }
-
-    U32 get_raw() {
-        return (U32)data;
-    }
+    U64 get_from_bit() { return 1ULL << this->get_from(); }
+    U64 get_to_bit()   { return 1ULL << this->get_to();   }
 
     bool operator==(const Move &m) {
         return this->data == m.data;

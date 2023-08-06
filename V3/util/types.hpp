@@ -29,8 +29,8 @@ enum class Piece : Square { // 4 bits
     WHITE_ALL = 12,
     BLACK_ALL = 13,
     ALL = 14,
-    GARBAGE = 15,
 
+    GARBAGE = 15,
     NA = 15
 };
 
