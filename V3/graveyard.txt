@@ -42,3 +42,99 @@
     // MAX ACHIEVABLE: ~280,000 Kn/S
 
     // b.print();
+
+    // template<class Color>
+// void Board::gen_moves<Gen::LEGALS>(MoveList &moves) {
+//     int checks = pop_count(this->get_checks());
+//     U64 pins = this->get_pins<Color>();
+
+//     if (checks) {
+//         // singles, doubles, promos, captures, promo-captures
+//         this->gen_pawn_moves  <Color, Gen::EVASIONS>(moves);
+
+//         this->gen_knight_moves<Color, Gen::EVASIONS>(moves);
+//         this->gen_king_moves  <Color, Gen::EVASIONS>(moves);
+
+//         this->gen_queen_moves <Color, Gen::EVASIONS>(moves);
+//         this->gen_rook_moves  <Color, Gen::EVASIONS>(moves);
+//         this->gen_bishop_moves<Color, Gen::EVASIONS>(moves);
+
+//     } else {
+//         // singles, doubles, promos, captures, promo-captures
+//         this->gen_pawn_moves  <Color, Gen::NON_EVASIONS>(moves);
+
+//         this->gen_knight_moves<Color, Gen::NON_EVASIONS>(moves);
+//         this->gen_king_moves  <Color, Gen::NON_EVASIONS>(moves);
+
+//         this->gen_queen_moves <Color, Gen::NON_EVASIONS>(moves);
+//         this->gen_rook_moves  <Color, Gen::NON_EVASIONS>(moves);
+//         this->gen_bishop_moves<Color, Gen::NON_EVASIONS>(moves);
+        
+//         this->gen_castle<Color, typename Color::OO>(moves);
+//         this->gen_castle<Color, typename Color::OOO>(moves);
+//     }
+// }
+
+// if constexpr (Gn == Gen::BLOCKS) {
+    //     U64 checks = this->get_checks<Color>();
+    //     U64 filter = this->get_check_blocks<Color>(checks);
+    //     this->gen_moves_with_filter<Color, Gen::QUIETS,   false>(moves, filter);
+    //     this->gen_moves_with_filter<Color, Gen::CAPTURES, false>(moves, filter);
+    // }
+
+    // if constexpr (Gn == Gen::LEGALS) {
+    //     U64 checks = this->get_checks<Color>();
+    //     int num_checks = pop_count(checks);
+
+    //     switch (num_checks) {
+    //         case 0: { // filter on from sqs
+    //             U64 pins = this->get_pins<Color>();
+    //             U64 filter1 = ~pins; // moveable with worrying about legality
+    //             U64 filter2 = pins; // brute force on this.
+    //             this->gen_moves_with_filter<Color, Gen::QUIETS,   false>(moves, filter2);
+    //             this->gen_moves_with_filter<Color, Gen::CAPTURES, false>(moves, filter2);
+    //             this->gen_piece_moves<Color, Flag::QUIET,   Color::KING>(moves, this->get_bitboard(Color::ALL));
+    //             this->gen_piece_moves<Color, Flag::CAPTURE, Color::KING>(moves, this->get_bitboard(Color::OPP_ALL));
+    //             {
+    //                 int& len = moves.size();
+    //                 for (int i = 0; i < moves.size(); i++) {
+    //                     this->do_move<Color>(moves[i]);
+    //                     bool was_illegal = this->get_checks<Color>() != 0ULL;
+    //                     this->undo_move<Color>(moves[i]);
+    //                     if (was_illegal) {
+    //                         moves[i--] = moves[--len];
+    //                     }
+    //                 }
+    //             }
+    //             this->gen_moves_with_filter<Color, Gen::QUIETS  , false>(moves, filter1);
+    //             this->gen_moves_with_filter<Color, Gen::CAPTURES, false>(moves, filter1);
+    //             this->gen_castle<Color, typename Color::OO >(moves);
+    //             this->gen_castle<Color, typename Color::OOO>(moves);
+    //             break;
+    //         }
+    //         case 1: { // filter on to_sqs
+    //             U64 pins = this->get_pins<Color>();
+    //             U64 check_blocks = this->get_check_blocks<Color>(this->get_checks<Color>());
+    //             U64 filter = check_blocks & ~pins; // not on kings
+    //             this->gen_moves_with_filter<Color, Gen::QUIETS,   false>(moves, filter);
+    //             this->gen_moves_with_filter<Color, Gen::CAPTURES, false>(moves, filter);
+    //             break;
+    //         }
+    //         case 2: {
+    //             // brute force on king moves. degenerate case.
+    //             this->gen_piece_moves<Color, Flag::QUIET,   Color::KING>(moves, this->get_bitboard(Color::ALL));
+    //             this->gen_piece_moves<Color, Flag::CAPTURE, Color::KING>(moves, this->get_bitboard(Color::OPP_ALL));
+    //             {
+    //                 int& len = moves.size();
+    //                 for (int i = 0; i < moves.size(); i++) {
+    //                     this->do_move<Color>(moves[i]);
+    //                     bool was_illegal = this->get_checks<Color>() != 0ULL;
+    //                     this->undo_move<Color>(moves[i]);
+    //                     if (was_illegal) {
+    //                         moves[i--] = moves[--len];
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }

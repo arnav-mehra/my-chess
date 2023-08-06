@@ -16,19 +16,6 @@ void Board::undo_quiet(Move& m) {
 }
 
 template<class Color>
-void Board::undo_pawn_double(Move& m) {
-    Square to = m.get_to();
-    Square from = to + 2 * Color::BACKWARD;
-    this->board[(int)from] = (Piece)Color::PAWN;
-    this->board[(int)to]   = Piece::GARBAGE;
-
-    U64 bit_diff = (1ULL << from) | (1ULL << to);
-    this->bitboards[(int)Color::PAWN] ^= bit_diff;
-    this->bitboards[(int)Color::ALL]  ^= bit_diff;
-    this->bitboards[(int)Piece::ALL]  ^= bit_diff;
-}
-
-template<class Color>
 void Board::undo_capture(Move& m) {
     this->from_hist[(int)m.get_from()]--;
 
@@ -120,26 +107,28 @@ void Board::undo_en_passant(Move& m) {
 
 template<class Color>
 void Board::undo_move(Move& m) {
-    switch (m.get_flag()) {
-        case Flag::QUIET: this->undo_quiet<Color>(m); return;
+    Flag fg = m.get_flag();
 
-        case Flag::CAPTURE: this->undo_capture<Color>(m); return;
-
-        case Flag::PAWN_DOUBLE: this->undo_pawn_double<Color>(m); return;
-
-        case Flag::SHORT_CASTLE: this->undo_castle<Color, typename Color::OO>(); return;
+    if (fg == Flag::CAPTURE) {
+        this->undo_capture<Color>(m); return;
+    }
+    if (fg == Flag::QUIET) {
+        this->undo_quiet<Color>(m); return;
+    }
+    switch (fg) {
+        case Flag::SHORT_CASTLE: this->undo_castle<Color, typename Color::OO >(); return;
         case Flag::LONG_CASTLE:  this->undo_castle<Color, typename Color::OOO>(); return;
+
+        case Flag::EN_PASSANT:   this->undo_en_passant<Color>(m); return;
 
         case Flag::KNIGHT_PROMO: this->undo_promo<Color, (Piece)Color::KNIGHT>(m); return;
         case Flag::BISHOP_PROMO: this->undo_promo<Color, (Piece)Color::BISHOP>(m); return;
-        case Flag::ROOK_PROMO:   this->undo_promo<Color, (Piece)Color::ROOK>(m); return;
-        case Flag::QUEEN_PROMO:  this->undo_promo<Color, (Piece)Color::QUEEN>(m); return;
+        case Flag::ROOK_PROMO:   this->undo_promo<Color, (Piece)Color::ROOK  >(m); return;
+        case Flag::QUEEN_PROMO:  this->undo_promo<Color, (Piece)Color::QUEEN >(m); return;
 
         case Flag::KNIGHT_PROMO_CAPTURE: this->undo_promo_capture<Color, (Piece)Color::KNIGHT>(m); return;
         case Flag::BISHOP_PROMO_CAPTURE: this->undo_promo_capture<Color, (Piece)Color::BISHOP>(m); return;
-        case Flag::ROOK_PROMO_CAPTURE:   this->undo_promo_capture<Color, (Piece)Color::ROOK>(m); return;
-        case Flag::QUEEN_PROMO_CAPTURE:  this->undo_promo_capture<Color, (Piece)Color::QUEEN>(m); return;
-
-        case Flag::EN_PASSANT: this->undo_en_passant<Color>(m); return;
+        case Flag::ROOK_PROMO_CAPTURE:   this->undo_promo_capture<Color, (Piece)Color::ROOK  >(m); return;
+        case Flag::QUEEN_PROMO_CAPTURE:  this->undo_promo_capture<Color, (Piece)Color::QUEEN >(m); return;
     }
 }

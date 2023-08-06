@@ -96,7 +96,7 @@ namespace Perft {
             return 1;
         }
 
-        MoveList& ml = stats.ml[depth];
+        MoveList ml = stats.ml[depth];
         ml.clear(); b.gen_moves<Color, Gen::PSEUDOS>(ml);
 
         U64 cnt = 0;

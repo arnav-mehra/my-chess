@@ -36,11 +36,10 @@ enum class Piece : Square { // 4 bits
 
 enum class Flag : Square { // colors tested for
     QUIET,
-
+    
     CAPTURE,
-    EN_PASSANT,
 
-    PAWN_DOUBLE,
+    EN_PASSANT,
 
     SHORT_CASTLE,
     LONG_CASTLE,

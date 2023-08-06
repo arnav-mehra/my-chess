@@ -4,7 +4,7 @@
 template<class Color>
 void Board::do_quiet(Move& m) {
     this->from_hist[m.get_from()]++;
-    
+
     Piece piece = this->board[m.get_from()];
     this->board[(int)m.get_from()] = Piece::GARBAGE;
     this->board[(int)m.get_to()]   = piece;
@@ -14,22 +14,9 @@ void Board::do_quiet(Move& m) {
     this->bitboards[(int)Color::ALL] ^= bit_diff;
     this->bitboards[(int)Piece::ALL] ^= bit_diff;
 
-    this->en_passant = 0;
-}
-
-template<class Color>
-void Board::do_pawn_double(Move& m) {
-    Square to = m.get_to();
-    this->en_passant = to + Color::BACKWARD;
-    Square from = this->en_passant + Color::BACKWARD;
-
-    this->board[(int)from] = Piece::GARBAGE;
-    this->board[(int)to]   = (Piece)Color::PAWN;
-
-    U64 bit_diff = (1ULL << from) | (1ULL << to);        
-    this->bitboards[(int)Color::PAWN] ^= bit_diff;
-    this->bitboards[(int)Color::ALL]  ^= bit_diff;
-    this->bitboards[(int)Piece::ALL]  ^= bit_diff;
+    U32 enables_ep = m.get_to() == (m.get_from() + Color::FORWARD + Color::FORWARD);
+    enables_ep &= (piece == (Piece)Color::PAWN);
+    this->en_passant = enables_ep * (m.get_from() + Color::FORWARD);
 }
 
 template<class Color>
@@ -38,17 +25,16 @@ void Board::do_capture(Move& m) {
 
     Piece piece = this->board[m.get_from()];
     Piece capture = this->board[m.get_to()];
-    m.set_capture(capture);
     this->board[(int)m.get_from()] = Piece::GARBAGE;
     this->board[(int)m.get_to()]   = piece;
 
     U64 from_bit = m.get_from_bit();
     U64 to_bit   = m.get_to_bit();
+    U64 bit_diff = from_bit | to_bit;
     // remove captured piece.
     this->bitboards[(int)capture]        ^= to_bit;
     this->bitboards[(int)Color::OPP_ALL] ^= to_bit;
     // move capturing piece.
-    U64 bit_diff = from_bit | to_bit;
     this->bitboards[(int)piece]      ^= bit_diff;
     this->bitboards[(int)Color::ALL] ^= bit_diff;
     // overall change.
@@ -139,26 +125,28 @@ void Board::do_en_passant(Move& m) {
 
 template<class Color>
 void Board::do_move(Move& m) {
+    Flag fg = m.get_flag();
+
+    if (fg == Flag::QUIET) {
+        this->do_quiet<Color>(m); return;
+    }
+    if (fg == Flag::CAPTURE) {
+        this->do_capture<Color>(m); return;
+    }
     switch (m.get_flag()) {
-        case Flag::QUIET: this->do_quiet<Color>(m); return;
-
-        case Flag::CAPTURE: this->do_capture<Color>(m); return;
-
-        case Flag::PAWN_DOUBLE: this->do_pawn_double<Color>(m); return;
-
-        case Flag::SHORT_CASTLE: this->do_castle<Color, typename Color::OO>(); return;
+        case Flag::SHORT_CASTLE: this->do_castle<Color, typename Color::OO >(); return;
         case Flag::LONG_CASTLE:  this->do_castle<Color, typename Color::OOO>(); return;
+
+        case Flag::EN_PASSANT:   this->do_en_passant<Color>(m); return;
 
         case Flag::KNIGHT_PROMO: this->do_promo<Color, (Piece)Color::KNIGHT>(m); return;
         case Flag::BISHOP_PROMO: this->do_promo<Color, (Piece)Color::BISHOP>(m); return;
-        case Flag::ROOK_PROMO:   this->do_promo<Color, (Piece)Color::ROOK>(m); return;
-        case Flag::QUEEN_PROMO:  this->do_promo<Color, (Piece)Color::QUEEN>(m); return;
+        case Flag::ROOK_PROMO:   this->do_promo<Color, (Piece)Color::ROOK  >(m); return;
+        case Flag::QUEEN_PROMO:  this->do_promo<Color, (Piece)Color::QUEEN >(m); return;
 
         case Flag::KNIGHT_PROMO_CAPTURE: this->do_promo_capture<Color, (Piece)Color::KNIGHT>(m); return;
         case Flag::BISHOP_PROMO_CAPTURE: this->do_promo_capture<Color, (Piece)Color::BISHOP>(m); return;
-        case Flag::ROOK_PROMO_CAPTURE:   this->do_promo_capture<Color, (Piece)Color::ROOK>(m); return;
-        case Flag::QUEEN_PROMO_CAPTURE:  this->do_promo_capture<Color, (Piece)Color::QUEEN>(m); return;
-
-        case Flag::EN_PASSANT: this->do_en_passant<Color>(m); return;
+        case Flag::ROOK_PROMO_CAPTURE:   this->do_promo_capture<Color, (Piece)Color::ROOK  >(m); return;
+        case Flag::QUEEN_PROMO_CAPTURE:  this->do_promo_capture<Color, (Piece)Color::QUEEN >(m); return;
     }
 }

@@ -117,10 +117,6 @@ Flag Board::derive_flag(Square from, Square to) {
                           && (from - to == 2);
     if (is_long_castle) return Flag::LONG_CASTLE;
 
-    bool is_double_pawn = (piece == (Piece)Color::PAWN)
-                          && ((from - to == 16) || (to - from == 16));
-    if (is_double_pawn) return Flag::PAWN_DOUBLE;
-
     return Flag::QUIET;
 }
 

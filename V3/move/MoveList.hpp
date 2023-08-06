@@ -25,18 +25,20 @@ public:
         cnt += can_castle;
     }
 
+    template<class Color>
     void add_promos(Square to) {    
-        this->add(Move::make<Flag::QUEEN_PROMO> (Piece::NA, Piece::NA, 0, to));
-        this->add(Move::make<Flag::ROOK_PROMO>  (Piece::NA, Piece::NA, 0, to));
-        this->add(Move::make<Flag::BISHOP_PROMO>(Piece::NA, Piece::NA, 0, to));
-        this->add(Move::make<Flag::KNIGHT_PROMO>(Piece::NA, Piece::NA, 0, to));
+        this->add(Move::make<Flag::QUEEN_PROMO> ((Piece)Color::PAWN, Piece::NA, 0, to));
+        this->add(Move::make<Flag::ROOK_PROMO>  ((Piece)Color::PAWN, Piece::NA, 0, to));
+        this->add(Move::make<Flag::BISHOP_PROMO>((Piece)Color::PAWN, Piece::NA, 0, to));
+        this->add(Move::make<Flag::KNIGHT_PROMO>((Piece)Color::PAWN, Piece::NA, 0, to));
     }
 
-    void add_promo_captures(Square from, Square to) {
-        this->add(Move::make<Flag::QUEEN_PROMO_CAPTURE> (Piece::NA, Piece::NA, from, to));
-        this->add(Move::make<Flag::ROOK_PROMO_CAPTURE>  (Piece::NA, Piece::NA, from, to));
-        this->add(Move::make<Flag::BISHOP_PROMO_CAPTURE>(Piece::NA, Piece::NA, from, to));
-        this->add(Move::make<Flag::KNIGHT_PROMO_CAPTURE>(Piece::NA, Piece::NA, from, to));
+    template<class Color>
+    void add_promo_captures(Piece capt, Square from, Square to) {
+        this->add(Move::make<Flag::QUEEN_PROMO_CAPTURE> ((Piece)Color::PAWN, capt, from, to));
+        this->add(Move::make<Flag::ROOK_PROMO_CAPTURE>  ((Piece)Color::PAWN, capt, from, to));
+        this->add(Move::make<Flag::BISHOP_PROMO_CAPTURE>((Piece)Color::PAWN, capt, from, to));
+        this->add(Move::make<Flag::KNIGHT_PROMO_CAPTURE>((Piece)Color::PAWN, capt, from, to));
     }
 
     void clear() {
