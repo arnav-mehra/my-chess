@@ -1,7 +1,8 @@
 #pragma once
 
-#include "../board/impl/index.hpp"
-#include "../util/conversion.hpp"
+#include "../Board.hpp"
+#include "../../util/conversion.hpp"
+#include "../../util/assertion.hpp"
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -34,7 +35,7 @@ void Board::from_fen(std::string fen_str) {
     //           << "FM: " << fullmove << '\n';
 
     // Init board & bitboards
-    for (int i = 0; i < 64; i++) board[i] = Piece::GARBAGE;
+    for (int i = 0; i < 64; i++) this->set_board(i, Piece::GARBAGE);
     for (U64 &x : bitboards) x = 0ULL;
 
     // Set board & bitboards
@@ -46,7 +47,7 @@ void Board::from_fen(std::string fen_str) {
         } else if (ch != '/') {
             Piece pc = char_to_piece(ch); 
             this->bitboards[(int) pc] |= 1ULL << i;
-            this->board[i++] = pc;
+            this->set_board(i++, pc);
         }
     }
     
@@ -88,7 +89,7 @@ void Board::from_fen(std::string fen_str) {
 
 void Board::print() {
     for (int i = 0; i < 64; i++) {
-        std::cout << piece_to_char(this->board[i]) << ' ';
+        std::cout << piece_to_char(this->get_board(i)) << ' ';
         if (i % 8 == 7) std::cout << "\033[1;32m" << (8 - i / 8) << "\033[0m" << '\n';
     }
     std::cout << "\033[1;32m" << "a b c d e f g h" << "\033[0m" << '\n';
@@ -96,13 +97,13 @@ void Board::print() {
 
 template<class Color>
 Flag Board::derive_flag(Square from, Square to) {
-    Piece piece = board[from];
+    Piece piece = this->get_board(from);
 
-    bool is_capture = board[to] != Piece::GARBAGE;
+    bool is_capture = this->get_board(to) != Piece::GARBAGE;
     bool is_promo = (piece == (Piece)Color::PAWN)
                     && ((1ULL << to) & Color::FINAL_RANK);
-    if (is_capture && is_promo) return Flag::QUEEN_PROMO_CAPTURE;
-    if (is_capture) return Flag::CAPTURE;
+    if (is_capture && is_promo) return Flag::QUEEN_PROMO;
+    if (is_capture) return Flag::REGULAR;
     if (is_promo) return Flag::QUEEN_PROMO;
 
     bool is_en_passant = (piece == (Piece)Color::PAWN)
@@ -111,13 +112,13 @@ Flag Board::derive_flag(Square from, Square to) {
 
     bool is_short_castle = (piece == (Piece)Color::KING)
                            && (to - from == 2);
-    if (is_short_castle) return Flag::SHORT_CASTLE;
+    if (is_short_castle) return Flag::CASTLE;
 
     bool is_long_castle = (piece == (Piece)Color::KING)
                           && (from - to == 2);
-    if (is_long_castle) return Flag::LONG_CASTLE;
+    if (is_long_castle) return Flag::CASTLE;
 
-    return Flag::QUIET;
+    return Flag::REGULAR;
 }
 
 void CLI(std::string fen_str) {

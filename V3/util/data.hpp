@@ -79,7 +79,6 @@ class White { public:
         static Square NON_CHECKS[3];
         static U64 KNIGHT_RISKS;
         static U64 PAWN_RISKS;
-        const static Flag FLAG;
 
         enum Squares : Square {
             KING_PRE  = 60,
@@ -100,7 +99,6 @@ class White { public:
         static Square NON_CHECKS[3];
         static U64 KNIGHT_RISKS;
         static U64 PAWN_RISKS;
-        const static Flag FLAG;
 
         enum Squares : Square {
             ROOK_PRE  = 56,
@@ -161,7 +159,6 @@ class Black { public:
         static Square NON_CHECKS[3];
         static U64 KNIGHT_RISKS;
         static U64 PAWN_RISKS;
-        const static Flag FLAG;
 
         enum Squares : Square {
             KING_PRE  = 04,
@@ -182,7 +179,6 @@ class Black { public:
         static Square NON_CHECKS[3];
         static U64 KNIGHT_RISKS;
         static U64 PAWN_RISKS;
-        const static Flag FLAG;
 
         enum Squares : Square {
             ROOK_PRE  = 00,
@@ -241,8 +237,6 @@ class Black { public:
 U64 White::PAWN_ATTACKS[64];
 U64 Black::PAWN_ATTACKS[64];
 
-const Flag White::OO::FLAG = Flag::SHORT_CASTLE;
-const Flag White::OOO::FLAG = Flag::LONG_CASTLE;
 Square White::OO::NON_CHECKS[3] = { 60, 61, 62 };
 U64 White::OO::KNIGHT_RISKS;
 U64 White::OO::PAWN_RISKS;
@@ -250,8 +244,6 @@ Square White::OOO::NON_CHECKS[3] = { 60, 59, 58 };
 U64 White::OOO::KNIGHT_RISKS;
 U64 White::OOO::PAWN_RISKS;
 
-const Flag Black::OO::FLAG = Flag::SHORT_CASTLE;
-const Flag Black::OOO::FLAG = Flag::LONG_CASTLE;
 Square Black::OO::NON_CHECKS[3] = { 4, 5, 6 };
 U64 Black::OO::KNIGHT_RISKS;
 U64 Black::OO::PAWN_RISKS;

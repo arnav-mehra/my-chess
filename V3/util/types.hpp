@@ -11,7 +11,7 @@ typedef signed char        I8;
 
 typedef U32 Square;
 
-enum class Piece : Square { // 4 bits
+enum class Piece { // 4 bits
     WHITE_PAWN = 0,
     WHITE_KNIGHT = 1,
     WHITE_BISHOP = 2,
@@ -35,33 +35,23 @@ enum class Piece : Square { // 4 bits
 };
 
 enum class Flag : Square { // colors tested for
-    QUIET,
-    
-    CAPTURE,
-
-    EN_PASSANT,
-
-    SHORT_CASTLE,
-    LONG_CASTLE,
-
-    KNIGHT_PROMO,
-    BISHOP_PROMO,
-    ROOK_PROMO,
-    QUEEN_PROMO,
-
-    KNIGHT_PROMO_CAPTURE,
-    BISHOP_PROMO_CAPTURE,
-    ROOK_PROMO_CAPTURE,
-    QUEEN_PROMO_CAPTURE,
+    REGULAR      = 0,
+    EN_PASSANT   = 1,
+    CASTLE       = 2,
+    KNIGHT_PROMO = 3,
+    BISHOP_PROMO = 4,
+    ROOK_PROMO   = 5,
+    QUEEN_PROMO  = 6
 };
 
 enum class Gen {
+    CAPTURES,
+    QUIETS,
     PSEUDOS,
+
     LEGALS,
     EVASIONS,
     NON_EVASIONS,
-    CAPTURES,
-    QUIETS,
-
+    
     BLOCKS
 };

@@ -3,8 +3,6 @@
 #include "types.hpp"
 #include <functional>
 
-// BIT READING
-
 // Index of next square / number of trailing zeros.
 U32 lsb(U64 b) {
     return __builtin_ctzll(b);

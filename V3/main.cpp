@@ -3,8 +3,8 @@
 #include <map>
 #include <fstream>
 
-#include "interface/interface.hpp"
 #include "board/impl/index.hpp"
+#include "move/impl/index.hpp"
 #include "init/init.hpp"
 #include "search/evaluate.hpp"
 #include "search/search.hpp"

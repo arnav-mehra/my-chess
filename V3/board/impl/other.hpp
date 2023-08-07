@@ -5,7 +5,7 @@
 #include "../../util/conversion.hpp"
 
 template<class Color, class Castle>
-bool Board::sliding_castle_checks() {
+U64 Board::sliding_castle_checks() {
     U64 occ_wo_king = this->bitboards[(int)Piece::ALL]
                     & ~this->bitboards[(int)Color::KING];
 
@@ -16,16 +16,16 @@ bool Board::sliding_castle_checks() {
     }
     U64 queen_risks = rook_risks | bishop_risks;
 
-    bool bishop_attackers = (bishop_risks & this->bitboards[Color::OPP_BISHOP]) != 0ULL;
-    bool rook_attackers   = (rook_risks   & this->bitboards[Color::OPP_ROOK]  ) != 0ULL;
-    bool queen_attackers  = (queen_risks  & this->bitboards[Color::OPP_QUEEN] ) != 0ULL;
+    U64 bishop_attackers = bishop_risks & this->bitboards[Color::OPP_BISHOP];
+    U64 rook_attackers   = rook_risks   & this->bitboards[Color::OPP_ROOK];
+    U64 queen_attackers  = queen_risks  & this->bitboards[Color::OPP_QUEEN];
     return bishop_attackers | rook_attackers | queen_attackers;
 }
 
 template<class Color>
 U64 Board::get_checks() {
-    U64 occ = this->bitboards[(int)Piece::ALL];
-    Square sq = lsb(this->bitboards[(int)Color::KING]);
+    U64 occ = this->get_bitboard(Piece::ALL);
+    Square sq = lsb(this->get_bitboard(Color::KING));
 
     U64 pawn_risks   = Color::PAWN_ATTACKS[sq];
     U64 knight_risks = MAPPED_MOVES::KNIGHT_MOVES[sq];
@@ -33,11 +33,11 @@ U64 Board::get_checks() {
     U64 bishop_risks = KMAGICS::get_b_attacks(sq, occ);
     U64 queen_risks  = rook_risks | bishop_risks;
 
-    U64 pawn_attackers   = (pawn_risks   & this->bitboards[Color::OPP_PAWN]  ) != 0ULL;
-    U64 knight_attackers = (knight_risks & this->bitboards[Color::OPP_KNIGHT]) != 0ULL;
-    U64 bishop_attackers = (bishop_risks & this->bitboards[Color::OPP_BISHOP]) != 0ULL;
-    U64 rook_attackers   = (rook_risks   & this->bitboards[Color::OPP_ROOK]  ) != 0ULL;
-    U64 queen_attackers  = (queen_risks  & this->bitboards[Color::OPP_QUEEN] ) != 0ULL;
+    U64 pawn_attackers   = pawn_risks   & this->bitboards[Color::OPP_PAWN];
+    U64 knight_attackers = knight_risks & this->bitboards[Color::OPP_KNIGHT];
+    U64 bishop_attackers = bishop_risks & this->bitboards[Color::OPP_BISHOP];
+    U64 rook_attackers   = rook_risks   & this->bitboards[Color::OPP_ROOK];
+    U64 queen_attackers  = queen_risks  & this->bitboards[Color::OPP_QUEEN];
     
     return bishop_attackers | rook_attackers | queen_attackers
          | knight_attackers | pawn_attackers;
@@ -162,7 +162,7 @@ void Board::assert_board_consistency() {
         while (cpy) {
             int sq = pop_lsb(cpy);
             std::string name = PIECE_NAMES[pc] + " PRESENCE AT " + std::to_string(sq);
-            assert(name, (int)board[sq] == pc);
+            assert(name, this->get_board(sq) == (Piece)pc);
         }
     }
     // void
@@ -170,7 +170,7 @@ void Board::assert_board_consistency() {
     while (void_bits) {
         int sq = pop_lsb(void_bits);
         std::string name = "VOID AT " + std::to_string(sq);
-        assert(name, board[sq] == Piece::GARBAGE);
+        assert(name, this->get_board(sq) == Piece::GARBAGE);
     }
 
     // OTHER

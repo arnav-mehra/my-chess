@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../board/impl/index.hpp"
-#include "../move/MoveList.hpp"
+#include "../move/impl/index.hpp"
 #include "../util/conversion.hpp"
 #include <unordered_map>
 #include <fstream>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../board/impl/index.hpp"
+#include "../move/impl/index.hpp"
 #include "evaluate.hpp"
 #include <algorithm>
 

@@ -1,13 +1,15 @@
 #pragma once
+
 #include "../Board.hpp"
+#include "../../move/MoveList.hpp"
 
 template<class Color>
 void Board::undo_quiet(Move& m) {
     this->from_hist[m.get_from()]--;
 
-    Piece piece = this->board[m.get_to()];
-    this->board[(int)m.get_from()] = piece;
-    this->board[(int)m.get_to()]   = Piece::GARBAGE;
+    Piece piece = this->get_board(m.get_to());
+    this->set_board(m.get_from(), piece         );
+    this->set_board(m.get_to(),   Piece::GARBAGE);
 
     U64 bit_diff = m.get_from_bit() | m.get_to_bit();        
     this->bitboards[(int)piece]      ^= bit_diff;
@@ -19,10 +21,10 @@ template<class Color>
 void Board::undo_capture(Move& m) {
     this->from_hist[(int)m.get_from()]--;
 
-    Piece piece = this->board[m.get_to()];
+    Piece piece = this->get_board(m.get_to());
     Piece capture = m.get_capture();
-    this->board[(int)m.get_from()] = piece;
-    this->board[(int)m.get_to()]   = capture;
+    this->set_board(m.get_from(), piece  );
+    this->set_board(m.get_to(),   capture);
 
     U64 from_bit = m.get_from_bit();
     U64 to_bit   = m.get_to_bit();
@@ -41,10 +43,10 @@ template<class Color, class Castle>
 void Board::undo_castle() {
     this->from_hist[(int)Castle::KING_PRE]--;
 
-    this->board[(int)Castle::KING_PRE]  = (Piece)Color::KING;
-    this->board[(int)Castle::ROOK_POST] = Piece::GARBAGE;
-    this->board[(int)Castle::KING_POST] = Piece::GARBAGE;
-    this->board[(int)Castle::ROOK_PRE]  = (Piece)Color::ROOK;
+    this->set_board(Castle::KING_PRE,  Color::KING   );
+    this->set_board(Castle::ROOK_POST, Piece::GARBAGE);
+    this->set_board(Castle::KING_POST, Piece::GARBAGE);
+    this->set_board(Castle::ROOK_PRE,  Color::ROOK   );
 
     this->bitboards[(int)Color::KING] ^= Castle::KING_DELTA;
     this->bitboards[(int)Color::ROOK] ^= Castle::ROOK_DELTA;
@@ -52,29 +54,40 @@ void Board::undo_castle() {
     this->bitboards[(int)Piece::ALL]  ^= Castle::DELTA;
 }
 
-template<class Color, Piece promo_piece>
+template<class Color>
 void Board::undo_promo(Move& m) {
-    Square from = m.get_to() + Color::BACKWARD;
-    this->board[from] = (Piece)Color::PAWN;
-    this->board[(int)m.get_to()] = Piece::GARBAGE;
-    
-    U64 from_bit = 1ULL << from;
+    constexpr bool turn = std::is_same<Color, White>::value;
+    constexpr int promo_offset = 6 * (1 - turn) - 2;
+    Piece promo_piece = (Piece)((int)m.get_flag() + (int)promo_offset);
+
+    this->set_board(m.get_from(), Color::PAWN   );
+    this->set_board(m.get_to(),   Piece::GARBAGE);
+
+    U64 from_bit = m.get_from_bit();
     U64 to_bit   = m.get_to_bit();
     this->bitboards[(int)Color::PAWN] ^= from_bit;
     this->bitboards[(int)promo_piece] ^= to_bit;
     U64 bit_diff = from_bit | to_bit;
     this->bitboards[(int)Color::ALL] ^= bit_diff;
     this->bitboards[(int)Piece::ALL] ^= bit_diff;
+
+    if (m.get_capture() != Piece::NA) {
+        this->add_piece<Color>(m.get_to(), m.get_capture(), (Piece)Color::OPP_ALL);
+    }
 }
 
-template<class Color, Piece promo_piece>
+template<class Color>
 void Board::undo_promo_capture(Move& m) {
+    constexpr bool turn = std::is_same<Color, White>::value;
+    constexpr int promo_offset = 6 * (1 - turn) - 2;
+    Piece promo_piece = (Piece)((int)m.get_flag() + (int)promo_offset);
+
     Piece capture = m.get_capture();
-    this->board[(int)m.get_from()] = (Piece)Color::PAWN;
-    this->board[(int)m.get_to()] = capture;
+    this->set_board(m.get_from(), Color::PAWN);
+    this->set_board(m.get_to(),   capture    );
 
     U64 from_bit = m.get_from_bit();
-    U64 to_bit = m.get_to_bit();
+    U64 to_bit   = m.get_to_bit();
     this->bitboards[(int)Color::PAWN]    ^= from_bit;
     this->bitboards[(int)promo_piece]    ^= to_bit;
     this->bitboards[(int)capture]        ^= to_bit;
@@ -88,9 +101,9 @@ void Board::undo_promo_capture(Move& m) {
 template<class Color>
 void Board::undo_en_passant(Move& m) {
     Square en_passant_sq = m.get_to() + Color::BACKWARD;
-    this->board[(int)m.get_from()]  = (Piece)Color::PAWN;
-    this->board[(int)m.get_to()]    = Piece::GARBAGE;
-    this->board[(int)en_passant_sq] = (Piece)Color::OPP_PAWN;
+    this->set_board(m.get_from(),  Color::PAWN    );
+    this->set_board(m.get_to(),    Piece::GARBAGE );
+    this->set_board(en_passant_sq, Color::OPP_PAWN);
 
     U64 from_bit = m.get_from_bit();
     U64 to_bit = m.get_to_bit();
@@ -109,26 +122,27 @@ template<class Color>
 void Board::undo_move(Move& m) {
     Flag fg = m.get_flag();
 
-    if (fg == Flag::CAPTURE) {
-        this->undo_capture<Color>(m); return;
+    if (fg == Flag::REGULAR) {
+        this->undo_quiet<Color>(m);
+        if (m.get_capture() != Piece::NA) {
+            this->add_piece<Color>(m.get_to(), m.get_capture(), (Piece)Color::OPP_ALL);
+        }
+        return;
     }
-    if (fg == Flag::QUIET) {
-        this->undo_quiet<Color>(m); return;
+
+    if (fg == Flag::CASTLE) {
+        if (m.get_to() == Color::OO::KING_POST) {
+            this->undo_castle<Color, typename Color::OO >(); return;
+        } else {
+            this->undo_castle<Color, typename Color::OOO>(); return;
+        }
     }
-    switch (fg) {
-        case Flag::SHORT_CASTLE: this->undo_castle<Color, typename Color::OO >(); return;
-        case Flag::LONG_CASTLE:  this->undo_castle<Color, typename Color::OOO>(); return;
-
-        case Flag::EN_PASSANT:   this->undo_en_passant<Color>(m); return;
-
-        case Flag::KNIGHT_PROMO: this->undo_promo<Color, (Piece)Color::KNIGHT>(m); return;
-        case Flag::BISHOP_PROMO: this->undo_promo<Color, (Piece)Color::BISHOP>(m); return;
-        case Flag::ROOK_PROMO:   this->undo_promo<Color, (Piece)Color::ROOK  >(m); return;
-        case Flag::QUEEN_PROMO:  this->undo_promo<Color, (Piece)Color::QUEEN >(m); return;
-
-        case Flag::KNIGHT_PROMO_CAPTURE: this->undo_promo_capture<Color, (Piece)Color::KNIGHT>(m); return;
-        case Flag::BISHOP_PROMO_CAPTURE: this->undo_promo_capture<Color, (Piece)Color::BISHOP>(m); return;
-        case Flag::ROOK_PROMO_CAPTURE:   this->undo_promo_capture<Color, (Piece)Color::ROOK  >(m); return;
-        case Flag::QUEEN_PROMO_CAPTURE:  this->undo_promo_capture<Color, (Piece)Color::QUEEN >(m); return;
+    
+    if (fg == Flag::EN_PASSANT) {
+        this->add_piece<Color>(m.get_to() + Color::BACKWARD, (Piece)Color::OPP_PAWN, (Piece)Color::OPP_ALL);
+        this->undo_quiet<Color>(m);
+        return;
     }
+
+    this->undo_promo<Color>(m);
 }

@@ -1,12 +1,19 @@
 #pragma once
 
 #include "../Board.hpp"
+#include "../../move/Move.hpp"
 #include "../../init/init.hpp"
 
 // PAWNS: singles, doubles, promos, captures, promo-captures
 
 template<class Color, Gen Gn>
 void Board::gen_pawn_moves(MoveList &moves, U64 filter) {
+    if (Gn == Gen::PSEUDOS) {
+        gen_pawn_moves<Color, Gen::CAPTURES>(moves,  this->get_bitboard(Color::OPP_ALL));
+        gen_pawn_moves<Color, Gen::QUIETS  >(moves, ~this->get_bitboard(Piece::ALL)    );
+        return;
+    }
+
     U64 promo_pawns = this->bitboards[Color::PAWN] & Color::PAWN_FINAL_RANK;
     U64 reg_pawns   = this->bitboards[Color::PAWN] & ~Color::PAWN_FINAL_RANK;
 
@@ -18,16 +25,17 @@ void Board::gen_pawn_moves(MoveList &moves, U64 filter) {
         while (singles) {
             Square to = pop_lsb(singles);
             Square from = to - Color::FORWARD;
-            moves.add(Move::make<Flag::QUIET>((Piece)Color::PAWN, Piece::NA, from, to));
+            moves.add(Move::make<Flag::REGULAR>(from, to));
         }
         while (doubles) {
             Square to = pop_lsb(doubles);
             Square from = to - 2 * Color::FORWARD;
-            moves.add(Move::make<Flag::QUIET>((Piece)Color::PAWN, Piece::NA, from, to));
+            moves.add(Move::make<Flag::REGULAR>(from, to));
         }
         while (promos) {
             Square to = pop_lsb(promos);
-            moves.add_promos<Color>(to);
+            Square from = to - Color::FORWARD;
+            moves.add_promos<Color>(from, to);
         }
     }
 
@@ -41,12 +49,12 @@ void Board::gen_pawn_moves(MoveList &moves, U64 filter) {
         while (left_caps) {
             Square to = pop_lsb(left_caps);
             Square from = to - (Square)Color::FORWARD_LEFT;
-            moves.add(Move::make<Flag::CAPTURE   >((Piece)Color::PAWN, this->get_board(to)   , from, to));
+            moves.add(Move::make<Flag::REGULAR>(from, to));
         }
         while (right_caps) {
             Square to = pop_lsb(right_caps);
             Square from = to - (Square)Color::FORWARD_RIGHT;
-            moves.add(Move::make<Flag::CAPTURE   >((Piece)Color::PAWN, this->get_board(to)   , from, to));
+            moves.add(Move::make<Flag::REGULAR>(from, to));
         }
 
         U64 left_cap_promos  = shift<(int)Color::FORWARD_LEFT >(promo_pawns) & non_right_opp;
@@ -55,12 +63,12 @@ void Board::gen_pawn_moves(MoveList &moves, U64 filter) {
         while (left_cap_promos) {
             Square to = pop_lsb(left_cap_promos);
             Square from = to - (Square)Color::FORWARD_LEFT;
-            moves.add_promo_captures<Color>(this->get_board(to), from, to);
+            moves.add_promos<Color>(from, to);
         }
         while (right_cap_promos) {
             Square to = pop_lsb(right_cap_promos);
             Square from = to - (Square)Color::FORWARD_RIGHT;
-            moves.add_promo_captures<Color>(this->get_board(to), from, to);
+            moves.add_promos<Color>(from, to);
         }
 
         if (this->en_passant) {
@@ -72,7 +80,7 @@ void Board::gen_pawn_moves(MoveList &moves, U64 filter) {
             while (attackers) {
                 U64 from = pop_lsb(attackers);
                 U64 to = this->en_passant;
-                moves.add(Move::make<Flag::EN_PASSANT>((Piece)Color::PAWN, (Piece)Color::OPP_PAWN, from, to));
+                moves.add(Move::make<Flag::EN_PASSANT>(from, to));
             }
         }
     }
@@ -92,31 +100,28 @@ U64 Board::gen_piece_attacks(Square from_sq) {
          : 0ULL;
 }
 
-template<class Color, Gen Gn, Piece Pc>
+template<class Color, Piece Pc>
 void Board::_gen_piece_moves(MoveList &moves, U64 filter, Square from_sq) {
-    constexpr Flag Fg = Gn == Gen::CAPTURES ? Flag::CAPTURE
-                                            : Flag::QUIET;
-
     U64 attacks = this->gen_piece_attacks<Color, Pc>(from_sq);
     U64 to_bb = attacks & filter;
     while (to_bb) {
         Square to_sq = pop_lsb(to_bb);
-        moves.add(Move::make<Fg>(Pc, this->get_board(to_sq), from_sq, to_sq));
+        moves.add(Move::make<Flag::REGULAR>(from_sq, to_sq));
     }
 }
 
-template<class Color, Gen Gn, Piece Pc>
+template<class Color, Piece Pc>
 void Board::gen_piece_moves(MoveList &moves, U64 filter) {
     U64 from_bb = this->get_bitboard(Pc);
 
     if constexpr (Pc == (Piece)Color::KING) {
         Square from_sq = lsb(from_bb);
-        this->_gen_piece_moves<Color, Gn, Pc>(moves, filter, from_sq);
+        this->_gen_piece_moves<Color, Pc>(moves, filter, from_sq);
     }
     else {
         while (from_bb) {
             Square from_sq = pop_lsb(from_bb);
-            this->_gen_piece_moves<Color, Gn, Pc>(moves, filter, from_sq);
+            this->_gen_piece_moves<Color, Pc>(moves, filter, from_sq);
         }
     }
 }
@@ -131,7 +136,7 @@ void Board::gen_castle(MoveList &moves) {
     
     bool no_knight_attacks  = (Castle::KNIGHT_RISKS & this->bitboards[Color::OPP_KNIGHT]) == 0ULL;
     bool no_pawn_attacks    = (Castle::PAWN_RISKS   & this->bitboards[Color::OPP_PAWN]  ) == 0ULL;
-    bool no_sliding_attacks = !sliding_castle_checks<Color, Castle>();
+    bool no_sliding_attacks = sliding_castle_checks<Color, Castle>() == 0ULL;
 
     bool can_castle = is_clear & has_right & rook_exists
                     & no_knight_attacks & no_pawn_attacks & no_sliding_attacks;
@@ -141,34 +146,26 @@ void Board::gen_castle(MoveList &moves) {
 // GENS
 
 template<class Color, Gen Gn>
-void Board::gen_moves(MoveList &moves, U64 filter) {
-    this->gen_pawn_moves <Color, Gn>(moves, filter);
-    this->gen_piece_moves<Color, Gn, (Piece)Color::KNIGHT>(moves, filter);
-    this->gen_piece_moves<Color, Gn, (Piece)Color::BISHOP>(moves, filter);
-    this->gen_piece_moves<Color, Gn, (Piece)Color::ROOK  >(moves, filter);
-    this->gen_piece_moves<Color, Gn, (Piece)Color::QUEEN >(moves, filter);
-    this->gen_piece_moves<Color, Gn, (Piece)Color::KING  >(moves, filter);
-}
-
-template<class Color, Gen Gn>
 void Board::gen_moves(MoveList &moves) {
-    if constexpr (Gn == Gen::QUIETS) {
-        U64 filter = ~this->get_bitboard(Piece::ALL);
-        this->gen_moves<Color, Gen::QUIETS>(moves, filter);
+    U64 filter = Gn == Gen::CAPTURES ?  this->get_bitboard(Color::OPP_ALL)
+               : Gn == Gen::QUIETS   ? ~this->get_bitboard(Piece::ALL)
+               : Gn == Gen::PSEUDOS  ? ~this->get_bitboard(Color::ALL)
+               : 0ULL;
 
+    this->gen_pawn_moves <Color, Gn>(moves, filter);
+
+    this->gen_piece_moves<Color, (Piece)Color::KNIGHT>(moves, filter);
+    this->gen_piece_moves<Color, (Piece)Color::BISHOP>(moves, filter);
+    this->gen_piece_moves<Color, (Piece)Color::ROOK  >(moves, filter);
+    this->gen_piece_moves<Color, (Piece)Color::QUEEN >(moves, filter);
+    this->gen_piece_moves<Color, (Piece)Color::KING  >(moves, filter);
+
+    if constexpr (Gn == Gen::QUIETS || Gn == Gen::PSEUDOS) {
         if (this->get_checks<Color>() == 0ULL) {
             this->gen_castle<Color, typename Color::OO >(moves);
             this->gen_castle<Color, typename Color::OOO>(moves);
         }
     }
 
-    if constexpr (Gn == Gen::CAPTURES) {
-        U64 filter = this->get_bitboard(Color::OPP_ALL);
-        this->gen_moves<Color, Gen::CAPTURES>(moves, filter);
-    }
-
-    if constexpr (Gn == Gen::PSEUDOS) {
-        this->gen_moves<Color, Gen::QUIETS  >(moves);
-        this->gen_moves<Color, Gen::CAPTURES>(moves);
-    }
+    moves.fill_moves(this);
 }
