@@ -2,8 +2,7 @@
 
 #include "Board.hpp"
 
-class Context {
-public:
+struct Context {
     U64 moved;
     U64 hash; // zobrist hash
     Square en_passant;

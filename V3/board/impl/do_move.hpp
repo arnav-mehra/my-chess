@@ -4,7 +4,7 @@
 #include "context.hpp"
 
 template<class Color>
-void Board::remove_piece(Square sq, Piece pc, Piece pc_col_all) {
+void inline Board::remove_piece(Square sq, Piece pc, Piece pc_col_all) {
     this->set_board(sq, Piece::NA);
 
     U64 to_bit = 1ULL << sq;
@@ -13,13 +13,13 @@ void Board::remove_piece(Square sq, Piece pc, Piece pc_col_all) {
 }
 
 template<class Color>
-void Board::remove_piece(Context& ctx, Square sq, Piece pc, Piece pc_col_all) {
+void inline Board::remove_piece(Context& ctx, Square sq, Piece pc, Piece pc_col_all) {
     ctx.toggle_hash_piece(pc, sq);
     this->remove_piece<Color>(sq, pc, pc_col_all);
 }
 
 template<class Color>
-void Board::add_piece(Square sq, Piece pc, Piece pc_col_all) {
+void inline Board::add_piece(Square sq, Piece pc, Piece pc_col_all) {
     this->set_board(sq, pc);
 
     U64 to_bit = 1ULL << sq;
@@ -28,13 +28,13 @@ void Board::add_piece(Square sq, Piece pc, Piece pc_col_all) {
 }
 
 template<class Color>
-void Board::add_piece(Context& ctx, Square sq, Piece pc, Piece pc_col_all) {
+void inline Board::add_piece(Context& ctx, Square sq, Piece pc, Piece pc_col_all) {
     ctx.toggle_hash_piece(pc, sq);
     this->remove_piece<Color>(sq, pc, pc_col_all);
 }
 
 template<class Color>
-void Board::move_piece(Piece pc, Square from, Square to) {
+void inline Board::move_piece(Piece pc, Square from, Square to) {
     this->set_board(from, Piece::NA);
     this->set_board(to,   pc);
 
@@ -44,14 +44,14 @@ void Board::move_piece(Piece pc, Square from, Square to) {
 }
 
 template<class Color>
-void Board::move_piece(Context& ctx, Piece pc, Square from, Square to) {
+void inline Board::move_piece(Context& ctx, Piece pc, Square from, Square to) {
     ctx.toggle_hash_piece(pc, from);
     ctx.toggle_hash_piece(pc, to);
     this->move_piece<Color>(pc, from, to);
 }
 
 template<class Color>
-void Board::do_regular(Context& ctx, Piece pc, Piece capt, Square from, Square to) {
+void inline Board::do_regular(Context& ctx, Piece pc, Piece capt, Square from, Square to) {
     ctx.toggle_hash_piece(capt, to);
     U64 to_bit = 1ULL << to;
     this->bitboards[(int)capt]           &= ~to_bit;
@@ -62,7 +62,7 @@ void Board::do_regular(Context& ctx, Piece pc, Piece capt, Square from, Square t
 }
 
 template<class Color, class Castle>
-void Board::do_castle(Context& ctx) {
+void inline Board::do_castle(Context& ctx) {
     ctx.toggle_hash_piece((Piece)Color::KING, (Square)Castle::KING_PRE );
     ctx.toggle_hash_piece((Piece)Color::KING, (Square)Castle::KING_POST);
     ctx.toggle_hash_piece((Piece)Color::ROOK, (Square)Castle::ROOK_PRE );
@@ -79,7 +79,7 @@ void Board::do_castle(Context& ctx) {
 }
 
 template<class Color>
-void Board::do_promo(Context& ctx, Flag fg, Piece capt, Square from, Square to) {
+void inline Board::do_promo(Context& ctx, Flag fg, Piece capt, Square from, Square to) {
     constexpr bool turn = std::is_same<Color, White>::value;
     constexpr int promo_offset = 6 * (1 - turn) - 2;
     Piece promo_piece = (Piece)((int)fg + (int)promo_offset);
@@ -103,7 +103,7 @@ void Board::do_promo(Context& ctx, Flag fg, Piece capt, Square from, Square to) 
 }
 
 template<class Color>
-void Board::do_en_passant(Context& ctx, Square from, Square to) {
+void inline Board::do_en_passant(Context& ctx, Square from, Square to) {
     Square cap_sq = to + Color::BACKWARD;
     this->remove_piece<Color>(ctx, cap_sq, (Piece)Color::OPP_PAWN, (Piece)Color::OPP_ALL);
     this->move_piece<Color>(ctx, (Piece)Color::PAWN, from, to);

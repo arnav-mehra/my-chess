@@ -73,6 +73,7 @@ namespace MAPPED_MOVES {
         init_mapped_piece_moves(KING_MOVES, KING_DIRECTIONS);
         init_mapped_piece_moves(White::PAWN_ATTACKS, WHITE_PAWN_ATTACK_DIRECTIONS);
         init_mapped_piece_moves(Black::PAWN_ATTACKS, BLACK_PAWN_ATTACK_DIRECTIONS);
+        
         init_mapped_castling_threats<White, White::OO>();
         init_mapped_castling_threats<White, White::OOO>();
         init_mapped_castling_threats<Black, Black::OO>();

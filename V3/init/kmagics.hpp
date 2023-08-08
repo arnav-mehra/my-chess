@@ -167,7 +167,7 @@ namespace KMAGICS {
         }
     }
 
-    U64 get_r_attacks(Square sq, U64 occ) {
+    inline U64 get_r_attacks(Square sq, U64 occ) {
         U64 magic = r_magic[sq];
         U64 addr  = magic & R_ADDR_MASK;
         int shift = magic >> 58;
@@ -179,7 +179,7 @@ namespace KMAGICS {
         return r_attacks[occ];
     }
 
-    U64 get_b_attacks(Square sq, U64 occ) {
+    inline U64 get_b_attacks(Square sq, U64 occ) {
         U64 magic = b_magic[sq];
         U64 addr  = magic & B_ADDR_MASK;
         int shift = magic >> 58;
@@ -191,7 +191,7 @@ namespace KMAGICS {
         return b_attacks[occ];
     }
 
-    U64 get_q_attacks(Square sq, U64 occ) {
+    inline U64 get_q_attacks(Square sq, U64 occ) {
         return get_r_attacks(sq, occ) | get_b_attacks(sq, occ);
     }
 };

@@ -4,7 +4,7 @@
 #include "../../move/MoveList.hpp"
 
 template<class Color>
-void Board::undo_regular(Piece pc, Piece capt, Square from, Square to) {
+void inline Board::undo_regular(Piece pc, Piece capt, Square from, Square to) {
     this->move_piece<Color>(pc, to, from);
 
     U64 cap_delta = (1ULL << to) * (capt != Piece::NA);
@@ -14,7 +14,7 @@ void Board::undo_regular(Piece pc, Piece capt, Square from, Square to) {
 }
 
 template<class Color, class Castle>
-void Board::undo_castle() {
+void inline Board::undo_castle() {
     this->set_board(Castle::KING_PRE,  Color::KING);
     this->set_board(Castle::ROOK_POST, Piece::NA);
     this->set_board(Castle::KING_POST, Piece::NA);
@@ -26,7 +26,7 @@ void Board::undo_castle() {
 }
 
 template<class Color>
-void Board::undo_promo(Flag fg, Piece capt, Square from, Square to) {
+void inline Board::undo_promo(Flag fg, Piece capt, Square from, Square to) {
     constexpr bool turn = std::is_same<Color, White>::value;
     constexpr int promo_offset = 6 * (1 - turn) - 2;
     Piece promo_piece = (Piece)((int)fg + (int)promo_offset);
@@ -47,22 +47,10 @@ void Board::undo_promo(Flag fg, Piece capt, Square from, Square to) {
 }
 
 template<class Color>
-void Board::undo_en_passant(Square from, Square to) {
+void inline Board::undo_en_passant(Square from, Square to) {
+    this->move_piece<Color>((Piece)Color::PAWN, to, from);
     Square en_passant_sq = to + Color::BACKWARD;
-    U64 en_passant_bit = 1ULL << en_passant_sq;
-    U64 from_bit = 1ULL << from;
-    U64 to_bit   = 1ULL << to;
-    U64 bit_diff = from_bit | to_bit;
-
-    this->set_board(from, Color::PAWN);
-    this->set_board(to,   Piece::NA);
-    this->set_board(en_passant_sq, Color::OPP_PAWN);
-
-    this->bitboards[(int)Color::PAWN] ^= bit_diff;
-    this->bitboards[(int)Color::ALL]  ^= bit_diff;
-    
-    this->bitboards[(int)Color::OPP_PAWN] ^= en_passant_bit;
-    this->bitboards[(int)Color::OPP_ALL]  ^= en_passant_bit;
+    this->add_piece<Color>(en_passant_sq, (Piece)Color::OPP_PAWN, (Piece)Color::OPP_ALL);
 }
 
 template<class Color>

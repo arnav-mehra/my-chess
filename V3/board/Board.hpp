@@ -87,18 +87,17 @@ private:
     template<class Color> void move_piece(Context&, Piece pc, Square from, Square to);
     template<class Color> void move_piece(Piece pc, Square from, Square to);
 
-    template<class Color>  void do_regular(Context& ctx, Piece pc, Piece capt, Square from, Square to);
-    template<class>        void do_quiet(Move&, Context&);
-    template<class Color>  void do_en_passant(Context& ctx, Square from, Square to);
-    template<class, class> void do_castle(Context&);
-    template<class Color>  void do_promo(Context& ctx, Flag flag, Piece capt, Square from, Square to);
+    template<class Color>  void do_regular   (Context& ctx, Piece pc, Piece capt, Square from, Square to);
+    template<class Color>  void do_en_passant(Context&, Square from, Square to);
+    template<class, class> void do_castle    (Context&);
+    template<class Color>  void do_promo     (Context& ctx, Flag flag, Piece capt, Square from, Square to);
 
     // undo_move.hpp
 
-    template<class Color>  void undo_regular(Piece pc, Piece capt, Square from, Square to);
+    template<class Color>  void undo_regular   (Piece pc, Piece capt, Square from, Square to);
     template<class>        void undo_en_passant(Square from, Square to);
-    template<class, class> void undo_castle();
-    template<class>        void undo_promo(Flag, Piece capt, Square from, Square to);
+    template<class, class> void undo_castle    ();
+    template<class>        void undo_promo     (Flag, Piece capt, Square from, Square to);
 
     // other.hpp
 
