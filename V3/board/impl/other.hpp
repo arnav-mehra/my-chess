@@ -6,8 +6,7 @@
 
 template<class Color, class Castle>
 U64 Board::sliding_castle_checks() {
-    U64 occ_wo_king = this->bitboards[(int)Piece::ALL]
-                    & ~this->bitboards[(int)Color::KING];
+    U64 occ_wo_king = this->get_occ() & ~this->bitboards[(int)Color::KING];
 
     U64 rook_risks = 0ULL, bishop_risks = 0ULL;
     for (Square sq : Castle::NON_CHECKS) {
@@ -24,7 +23,8 @@ U64 Board::sliding_castle_checks() {
 
 template<class Color>
 U64 Board::get_checks() {
-    U64 occ = this->get_bitboard(Piece::ALL);
+    U64 occ = this->get_occ();
+        
     Square sq = lsb(this->get_bitboard(Color::KING));
 
     U64 pawn_risks   = Color::PAWN_ATTACKS[sq];
@@ -114,13 +114,6 @@ void Board::assert_board_consistency() {
             | bitboards[(int)Piece::BLACK_KING]
         )
     );
-    assert(
-        "FULL_AGGREGATE",
-        bitboards[(int)Piece::ALL] == (
-            bitboards[(int)Piece::BLACK_ALL]
-            | bitboards[(int)Piece::WHITE_ALL]
-        )
-    );
 
     // accidental piece non-removal or addition.
     // if piece overlap, additional +1 to pop_count.
@@ -166,11 +159,11 @@ void Board::assert_board_consistency() {
         }
     }
     // void
-    U64 void_bits = ~bitboards[(int)Piece::ALL];
+    U64 void_bits = ~(this->get_bitboard(Piece::BLACK_ALL) | this->get_bitboard(Piece::WHITE_ALL));
     while (void_bits) {
         int sq = pop_lsb(void_bits);
         std::string name = "VOID AT " + std::to_string(sq);
-        assert(name, this->get_board(sq) == Piece::GARBAGE);
+        assert(name, this->get_board(sq) == Piece::NA);
     }
 
     // OTHER
@@ -193,16 +186,6 @@ void Board::assert_board_consistency() {
         pop_count(bitboards[(int)Piece::BLACK_PAWN]) <= 8
     );
 
-    // en passant square correctness.
-    // assert(
-    //     "EN PASSANT SQUARE OVERLAP",
-    //     this->en_passant == 0
-    //     || 0ULL == (
-    //           (1ULL << this->en_passant)
-    //         & bitboards[(int)Piece::ALL]
-    //     )
-    // );
-
     // success("ASSERTIONS PASSED!");
 }
 
@@ -216,12 +199,6 @@ bool Board::operator==(Board &b) {
     for (int i = 0; i < NUM_BITBOARDS; i++) {
         if (b.get_bitboard(i) != this->get_bitboard(i)) {
             std::cout << "NOT EQUAL: bitboard " << PIECE_NAMES[i] << "\n";
-            return false;
-        }
-    }
-    for (int i = 0; i < NUM_BITBOARDS; i++) {
-        if (b.get_from_cnt(i) != b.get_from_cnt(i)) {
-            std::cout << "NOT EQUAL: from_hist " << i << "\n";
             return false;
         }
     }

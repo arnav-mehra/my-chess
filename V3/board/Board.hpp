@@ -3,6 +3,7 @@
 #include "../util/types.hpp"
 #include "../move/MoveList.hpp"
 #include "impl/temp.hpp"
+#include "Context.hpp"
 #include <string>
 #include <cstdio>
 #include <array>
@@ -11,36 +12,8 @@ class Board {
     std::array<U64, NUM_BITBOARDS> bitboards; // [Piece]
     BoardArr board;
 
-    // state info
-    std::array<int, NUM_SQUARES> from_hist = {}; // used for castling rights. Only incremented for quiet, castle, & capture.
-    Square en_passant;
-
-public:    
+public:
     Board() {}
-
-    // test.hpp
-
-    void assert_board_consistency();
-    bool operator==(Board &b);
-
-    // interface.hpp
-
-    void from_fen(std::string fen_str);
-    void print();
-    template<class> Flag derive_flag(Square from, Square to);
-    
-    // do_move.hpp && undo_move.hpp
-
-    template<class> void do_move(Move& m);
-    template<class> void undo_move(Move& m);
-
-    // gen_moves.hpp
-
-    template<class Color, Gen Gn> void gen_moves(MoveList &moves);
-    
-    // other.hpp
-    
-    template<class> U64 get_checks();
 
     // getters + setters
 
@@ -59,51 +32,73 @@ public:
         return this->bitboards[(int)pc];
     }
 
-    template<typename Sq>
-    int& get_from_cnt(Sq sq) {
-        return this->from_hist[(int)sq];
+    U64 get_occ() {
+        return this->get_bitboard(Piece::BLACK_ALL)
+             | this->get_bitboard(Piece::WHITE_ALL);
     }
 
-    int get_en_passant() {
-        return this->en_passant;
+    U64 get_unocc() {
+        return ~this->get_occ();
     }
+
+    // test.hpp
+
+    void assert_board_consistency();
+    bool operator==(Board &b);
+
+    // interface.hpp
+
+    Context from_fen(std::string fen_str);
+    void print();
+    template<class> Flag derive_flag(Square from, Square to);
+
+    // gen_moves.hpp
+
+    template<class Color, Gen Gn> void gen_moves(MoveList&, Context&);
+
+    // do_move.hpp && undo_move.hpp
+
+    template<class> void do_move(Move&, Context&);
+    template<class> void undo_move(Move&);
+
+    // other.hpp
+
+    template<class> U64 get_checks();
 
 private:
 
     // gen_moves.hpp
-    
-    template<class, Gen> void gen_pawn_moves(MoveList&, U64 filter);
-    template<class, Piece> U64 gen_piece_attacks(Square from_sq);
+
+    template<class, Gen>   void gen_pawn_moves(MoveList&, Context&, U64 filter);
+    template<class, Piece> U64  gen_piece_attacks(Square from_sq);
     template<class, Piece> void _gen_piece_moves(MoveList&, U64 filter, Square from_sq);
     template<class, Piece> void gen_piece_moves(MoveList&, U64 filter);
-    template<class, class> U64 sliding_castle_checks();
-    template<class, class> void gen_castle(MoveList &moves);
-
-    template<class Color>
-    void remove_piece(Square sq, Piece pc, Piece pc_col_all);
-
-    template<class Color>
-    void add_piece(Square sq, Piece pc, Piece pc_col_all);
+    template<class, class> U64  sliding_castle_checks();
+    template<class, class> void gen_castle(MoveList&, Context&);
 
     // do_move.hpp
 
-    template<class> void do_quiet(Move&);
-    template<class> void do_pawn_double(Move&);
-    template<class> void do_en_passant(Move&); // en passant is forced.
-    template<class> void do_capture(Move&);
-    template<class, class> void do_castle();
-    template<class> void do_promo(Move&);
-    template<class> void do_promo_capture(Move&);
+    template<class Color> void remove_piece(Context&, Square, Piece, Piece col_all);
+    template<class Color> void remove_piece(Square, Piece, Piece col_all);
+
+    template<class Color> void add_piece(Context&, Square, Piece, Piece col_all);
+    template<class Color> void add_piece(Square, Piece, Piece col_all);
+
+    template<class Color> void move_piece(Context&, Piece pc, Square from, Square to);
+    template<class Color> void move_piece(Piece pc, Square from, Square to);
+
+    template<class Color>  void do_regular(Context& ctx, Piece pc, Piece capt, Square from, Square to);
+    template<class>        void do_quiet(Move&, Context&);
+    template<class Color>  void do_en_passant(Context& ctx, Square from, Square to);
+    template<class, class> void do_castle(Context&);
+    template<class Color>  void do_promo(Context& ctx, Flag flag, Piece capt, Square from, Square to);
 
     // undo_move.hpp
 
-    template<class> void undo_quiet(Move&);
-    template<class> void undo_pawn_double(Move&);
-    template<class> void undo_en_passant(Move&);
-    template<class> void undo_capture(Move&);
+    template<class Color>  void undo_regular(Piece pc, Piece capt, Square from, Square to);
+    template<class>        void undo_en_passant(Square from, Square to);
     template<class, class> void undo_castle();
-    template<class> void undo_promo(Move&);
-    template<class> void undo_promo_capture(Move&);
+    template<class>        void undo_promo(Flag, Piece capt, Square from, Square to);
 
     // other.hpp
 

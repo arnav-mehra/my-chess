@@ -3,14 +3,15 @@
 #include "../Board.hpp"
 #include "../../move/Move.hpp"
 #include "../../init/init.hpp"
+#include "context.hpp"
 
 // PAWNS: singles, doubles, promos, captures, promo-captures
 
 template<class Color, Gen Gn>
-void Board::gen_pawn_moves(MoveList &moves, U64 filter) {
+void Board::gen_pawn_moves(MoveList &moves, Context& ctx, U64 filter) {
     if (Gn == Gen::PSEUDOS) {
-        gen_pawn_moves<Color, Gen::CAPTURES>(moves,  this->get_bitboard(Color::OPP_ALL));
-        gen_pawn_moves<Color, Gen::QUIETS  >(moves, ~this->get_bitboard(Piece::ALL)    );
+        gen_pawn_moves<Color, Gen::CAPTURES>(moves, ctx, this->get_bitboard(Color::OPP_ALL));
+        gen_pawn_moves<Color, Gen::QUIETS  >(moves, ctx, this->get_unocc());
         return;
     }
 
@@ -71,15 +72,15 @@ void Board::gen_pawn_moves(MoveList &moves, U64 filter) {
             moves.add_promos<Color>(from, to);
         }
 
-        if (this->en_passant) {
-            U64 pot_l_attackers = 1ULL << (this->en_passant - Color::FORWARD_RIGHT);
-            U64 pot_r_attackers = 1ULL << (this->en_passant - Color::FORWARD_LEFT );
+        if (ctx.en_passant) {
+            U64 pot_l_attackers = 1ULL << (ctx.en_passant - Color::FORWARD_RIGHT);
+            U64 pot_r_attackers = 1ULL << (ctx.en_passant - Color::FORWARD_LEFT );
             U64 pot_attackers = (pot_l_attackers & NON_RIGHT_PIECES) | (pot_r_attackers & NON_LEFT_PIECES);
             U64 attackers = pot_attackers & reg_pawns;
             
             while (attackers) {
                 U64 from = pop_lsb(attackers);
-                U64 to = this->en_passant;
+                U64 to = ctx.en_passant;
                 moves.add(Move::make<Flag::EN_PASSANT>(from, to));
             }
         }
@@ -90,10 +91,9 @@ void Board::gen_pawn_moves(MoveList &moves, U64 filter) {
 
 template<class Color, Piece Pc>
 U64 Board::gen_piece_attacks(Square from_sq) {
-    U64 occup = this->bitboards[(int)Piece::ALL];
-    return Pc == (Piece)Color::QUEEN  ? KMAGICS::get_q_attacks(from_sq, occup)
-         : Pc == (Piece)Color::BISHOP ? KMAGICS::get_b_attacks(from_sq, occup)
-         : Pc == (Piece)Color::ROOK   ? KMAGICS::get_r_attacks(from_sq, occup)
+    return Pc == (Piece)Color::QUEEN  ? KMAGICS::get_q_attacks(from_sq, this->get_occ())
+         : Pc == (Piece)Color::BISHOP ? KMAGICS::get_b_attacks(from_sq, this->get_occ())
+         : Pc == (Piece)Color::ROOK   ? KMAGICS::get_r_attacks(from_sq, this->get_occ())
          : Pc == (Piece)Color::KNIGHT ? MAPPED_MOVES::get_n_attacks(from_sq)
          : Pc == (Piece)Color::KING   ? MAPPED_MOVES::get_k_attacks(from_sq)
          : Pc == (Piece)Color::PAWN   ? Color::PAWN_ATTACKS[from_sq]
@@ -129,11 +129,11 @@ void Board::gen_piece_moves(MoveList &moves, U64 filter) {
 // CASTLES
 
 template<class Color, class Castle>
-void Board::gen_castle(MoveList &moves) {
-    bool is_clear = (Castle::EMPTY_MASK & this->bitboards[(int)Piece::ALL]) == 0ULL;
-    bool has_right = this->from_hist[Castle::KING_PRE] == 0 && this->from_hist[Castle::ROOK_PRE] == 0;
+void Board::gen_castle(MoveList& moves, Context& ctx) {    
+    bool is_clear = (Castle::EMPTY_MASK & this->get_occ()) == 0ULL;
+    bool has_right = ctx.has_castling_rights<Castle>();
     bool rook_exists = (this->bitboards[(int)Color::ROOK] & (1ULL << Castle::ROOK_PRE)) != 0ULL;
-    
+
     bool no_knight_attacks  = (Castle::KNIGHT_RISKS & this->bitboards[Color::OPP_KNIGHT]) == 0ULL;
     bool no_pawn_attacks    = (Castle::PAWN_RISKS   & this->bitboards[Color::OPP_PAWN]  ) == 0ULL;
     bool no_sliding_attacks = sliding_castle_checks<Color, Castle>() == 0ULL;
@@ -146,13 +146,13 @@ void Board::gen_castle(MoveList &moves) {
 // GENS
 
 template<class Color, Gen Gn>
-void Board::gen_moves(MoveList &moves) {
-    U64 filter = Gn == Gen::CAPTURES ?  this->get_bitboard(Color::OPP_ALL)
-               : Gn == Gen::QUIETS   ? ~this->get_bitboard(Piece::ALL)
+void Board::gen_moves(MoveList& moves, Context& ctx) {
+    U64 filter = Gn == Gen::CAPTURES ? this->get_bitboard(Color::OPP_ALL)
+               : Gn == Gen::QUIETS   ? this->get_unocc()
                : Gn == Gen::PSEUDOS  ? ~this->get_bitboard(Color::ALL)
                : 0ULL;
 
-    this->gen_pawn_moves <Color, Gn>(moves, filter);
+    this->gen_pawn_moves <Color, Gn>(moves, ctx, filter);
 
     this->gen_piece_moves<Color, (Piece)Color::KNIGHT>(moves, filter);
     this->gen_piece_moves<Color, (Piece)Color::BISHOP>(moves, filter);
@@ -162,8 +162,8 @@ void Board::gen_moves(MoveList &moves) {
 
     if constexpr (Gn == Gen::QUIETS || Gn == Gen::PSEUDOS) {
         if (this->get_checks<Color>() == 0ULL) {
-            this->gen_castle<Color, typename Color::OO >(moves);
-            this->gen_castle<Color, typename Color::OOO>(moves);
+            this->gen_castle<Color, typename Color::OO >(moves, ctx);
+            this->gen_castle<Color, typename Color::OOO>(moves, ctx);
         }
     }
 

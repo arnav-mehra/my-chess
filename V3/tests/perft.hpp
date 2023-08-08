@@ -2,6 +2,7 @@
 
 #include "../board/impl/index.hpp"
 #include "../move/impl/index.hpp"
+#include "../board/Context.hpp"
 #include "../util/conversion.hpp"
 #include <unordered_map>
 #include <fstream>
@@ -79,7 +80,7 @@ namespace Perft {
     }
 
     template<class Color>
-    U64 _run(Board &b, int depth, Stats &stats) {
+    U64 _run(Board& b, Context& ctx, int depth, Stats& stats) {
         constexpr bool turn = std::is_same<Color, White>::value;
 
         if (depth == 0) {
@@ -97,15 +98,16 @@ namespace Perft {
         }
 
         MoveList ml = stats.ml[depth];
-        ml.clear(); b.gen_moves<Color, Gen::PSEUDOS>(ml);
+        ml.clear(); b.gen_moves<Color, Gen::PSEUDOS>(ml, ctx);
 
         U64 cnt = 0;
         for (int i = 0; i < ml.size(); i++) {
-            b.do_move<Color>(ml[i]);
+            Context new_ctx = ctx;
+            b.do_move<Color>(ml[i], new_ctx);
             if (b.get_checks<Color>() == 0ULL) { // filter out illegal moves
                 // stats.flag_hist[(int)ml[i].get_flag()]++;
-                int res = turn ? _run<Black>(b, depth - 1, stats)
-                               : _run<White>(b, depth - 1, stats);
+                int res = turn ? _run<Black>(b, new_ctx, depth - 1, stats)
+                               : _run<White>(b, new_ctx, depth - 1, stats);
                 if (depth == stats.init_depth) stats.add_move(ml[i], res);
                 cnt += res;
             }
@@ -117,7 +119,9 @@ namespace Perft {
     }
 
     template<class Color>
-    void run(Board &b, int depth, std::string solution_file = "") {
+    void run(Board& b, Context& ctx, int depth, std::string solution_file = "") {
+        constexpr bool turn = std::is_same<Color, White>::value;
+
         bool CMP_TO_SOLUTION = solution_file.size() != 0;
         std::unordered_map<std::string, int> solution_hist;
         read_solution_file(solution_file, solution_hist, CMP_TO_SOLUTION);
@@ -125,12 +129,10 @@ namespace Perft {
         Stats stats; stats.init_depth = depth;
 
         auto start = std::chrono::system_clock::now();
-        U64 res = _run<Color>(b, depth, stats);
+        U64 res = _run<Color>(b, ctx, depth, stats);
         auto end = std::chrono::system_clock::now();
         std::chrono::duration<double> t_sec = end - start;
-
         // std::cout << "PERFT " << depth << ": " << res << "\n\n";
-
         std::cout << t_sec.count() << " s\n";
         std::cout << (res / t_sec.count()) << " n/s\n\n";
 

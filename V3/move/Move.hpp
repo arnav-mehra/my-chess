@@ -8,7 +8,7 @@
 
 class Move {
 public:
-    U32 data; // [-----SC-----|CAPT|-FROM-|--TO--|FLAG]
+    U32 data; // [-----SC-----|CAPT|FLAG|-FROM-|--TO--]
 
     Move();
     Move(U32 data);

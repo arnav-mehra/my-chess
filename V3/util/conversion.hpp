@@ -21,7 +21,7 @@ Piece char_to_piece(char pc) {
         case 'q': return Piece::BLACK_QUEEN;
         case 'k': return Piece::BLACK_KING;
     }
-    return Piece::GARBAGE;
+    return Piece::NA;
 }
 
 char piece_to_char(Piece pc) {
@@ -109,5 +109,5 @@ const std::string PIECE_NAMES[] = { // 4 bits
     "WHITE_ALL",
     "BLACK_ALL",
     "ALL",
-    "GARBAGE",
+    "NA",
 };

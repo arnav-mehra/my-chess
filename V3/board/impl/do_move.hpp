@@ -1,32 +1,21 @@
 #pragma once
+
 #include "../Board.hpp"
-
-template<class Color>
-void Board::do_quiet(Move& m) {
-    this->from_hist[m.get_from()]++;
-
-    Piece piece = this->get_board(m.get_from());
-    this->set_board(m.get_from(), Piece::GARBAGE);
-    this->set_board(m.get_to(),   piece         );
-
-    U64 bit_diff = m.get_from_bit() | m.get_to_bit();
-    this->bitboards[(int)piece]      ^= bit_diff;
-    this->bitboards[(int)Color::ALL] ^= bit_diff;
-    this->bitboards[(int)Piece::ALL] ^= bit_diff;
-
-    U32 enables_ep = m.get_to() == (m.get_from() + Color::FORWARD + Color::FORWARD);
-    enables_ep &= (piece == (Piece)Color::PAWN);
-    this->en_passant = enables_ep * (m.get_from() + Color::FORWARD);
-}
+#include "context.hpp"
 
 template<class Color>
 void Board::remove_piece(Square sq, Piece pc, Piece pc_col_all) {
-    this->set_board(sq, Piece::GARBAGE);
+    this->set_board(sq, Piece::NA);
 
     U64 to_bit = 1ULL << sq;
     this->bitboards[(int)pc]         ^= to_bit;
     this->bitboards[(int)pc_col_all] ^= to_bit;
-    this->bitboards[(int)Piece::ALL] ^= to_bit;
+}
+
+template<class Color>
+void Board::remove_piece(Context& ctx, Square sq, Piece pc, Piece pc_col_all) {
+    ctx.toggle_hash_piece(pc, sq);
+    this->remove_piece<Color>(sq, pc, pc_col_all);
 }
 
 template<class Color>
@@ -36,147 +25,116 @@ void Board::add_piece(Square sq, Piece pc, Piece pc_col_all) {
     U64 to_bit = 1ULL << sq;
     this->bitboards[(int)pc]         ^= to_bit;
     this->bitboards[(int)pc_col_all] ^= to_bit;
-    this->bitboards[(int)Piece::ALL] ^= to_bit;
 }
 
 template<class Color>
-void Board::do_capture(Move& m) {
-    this->from_hist[(int)m.get_from()]++;
+void Board::add_piece(Context& ctx, Square sq, Piece pc, Piece pc_col_all) {
+    ctx.toggle_hash_piece(pc, sq);
+    this->remove_piece<Color>(sq, pc, pc_col_all);
+}
 
-    Piece piece   = this->get_board(m.get_from());
-    Piece capture = this->get_board(m.get_to());
-    this->set_board(m.get_from(), Piece::GARBAGE);
-    this->set_board(m.get_to(), piece);
+template<class Color>
+void Board::move_piece(Piece pc, Square from, Square to) {
+    this->set_board(from, Piece::NA);
+    this->set_board(to,   pc);
 
-    U64 from_bit = m.get_from_bit();
-    U64 to_bit   = m.get_to_bit();
-    U64 bit_diff = from_bit | to_bit;
-    // remove captured piece.
-    this->bitboards[(int)capture]        ^= to_bit;
-    this->bitboards[(int)Color::OPP_ALL] ^= to_bit;
-    // move capturing piece.
-    this->bitboards[(int)piece]      ^= bit_diff;
-    this->bitboards[(int)Color::ALL] ^= bit_diff;
-    // overall change.
-    this->bitboards[(int)Piece::ALL] ^= from_bit;
+    U64 delta = (1ULL << from) | (1ULL << to);
+    this->bitboards[(int)pc]         ^= delta;
+    this->bitboards[(int)Color::ALL] ^= delta;
+}
 
-    this->en_passant = 0;
+template<class Color>
+void Board::move_piece(Context& ctx, Piece pc, Square from, Square to) {
+    ctx.toggle_hash_piece(pc, from);
+    ctx.toggle_hash_piece(pc, to);
+    this->move_piece<Color>(pc, from, to);
+}
+
+template<class Color>
+void Board::do_regular(Context& ctx, Piece pc, Piece capt, Square from, Square to) {
+    ctx.toggle_hash_piece(capt, to);
+    U64 to_bit = 1ULL << to;
+    this->bitboards[(int)capt]           &= ~to_bit;
+    this->bitboards[(int)Color::OPP_ALL] &= ~to_bit;
+
+    this->move_piece<Color>(ctx, pc, from, to);
+    ctx.set_en_passant<Color>(pc, from, to);
 }
 
 template<class Color, class Castle>
-void Board::do_castle() {
-    this->from_hist[(int)Castle::KING_PRE]++;
+void Board::do_castle(Context& ctx) {
+    ctx.toggle_hash_piece((Piece)Color::KING, (Square)Castle::KING_PRE );
+    ctx.toggle_hash_piece((Piece)Color::KING, (Square)Castle::KING_POST);
+    ctx.toggle_hash_piece((Piece)Color::ROOK, (Square)Castle::ROOK_PRE );
+    ctx.toggle_hash_piece((Piece)Color::ROOK, (Square)Castle::ROOK_POST);
 
-    this->set_board(Castle::KING_PRE,  Piece::GARBAGE);
-    this->set_board(Castle::ROOK_POST, Color::ROOK   );
-    this->set_board(Castle::KING_POST, Color::KING   );
-    this->set_board(Castle::ROOK_PRE,  Piece::GARBAGE);
-    
+    this->set_board(Castle::KING_PRE,  Piece::NA  );
+    this->set_board(Castle::ROOK_POST, Color::ROOK);
+    this->set_board(Castle::KING_POST, Color::KING);
+    this->set_board(Castle::ROOK_PRE,  Piece::NA  );
+
     this->bitboards[(int)Color::KING] ^= Castle::KING_DELTA;
     this->bitboards[(int)Color::ROOK] ^= Castle::ROOK_DELTA;
     this->bitboards[(int)Color::ALL]  ^= Castle::DELTA;
-    this->bitboards[(int)Piece::ALL]  ^= Castle::DELTA;
-
-    this->en_passant = 0;
 }
 
 template<class Color>
-void Board::do_promo(Move& m) {
+void Board::do_promo(Context& ctx, Flag fg, Piece capt, Square from, Square to) {
     constexpr bool turn = std::is_same<Color, White>::value;
     constexpr int promo_offset = 6 * (1 - turn) - 2;
-    Piece promo_piece = (Piece)((int)m.get_flag() + (int)promo_offset);
+    Piece promo_piece = (Piece)((int)fg + (int)promo_offset);
+    U64 to_bit = 1ULL << to;
+    U64 from_bit = 1ULL << from;
+    U64 bit_diff = from_bit | to_bit;
 
-    if (m.get_capture() != Piece::NA) {
-        this->remove_piece<Color>(m.get_to(), m.get_capture(), (Piece)Color::OPP_ALL);
-    }
+    ctx.toggle_hash_piece(capt, to);
+    this->bitboards[(int)capt]           &= ~to_bit;
+    this->bitboards[(int)Color::OPP_ALL] &= ~to_bit;
 
-    this->set_board(m.get_from(), Piece::GARBAGE);
-    this->set_board(m.get_to(),   promo_piece   );
+    ctx.toggle_hash_piece(promo_piece, to);
+    ctx.toggle_hash_piece((Piece)Color::PAWN, from);
 
-    U64 from_bit = m.get_from_bit();
-    U64 to_bit   = m.get_to_bit();
+    this->set_board(from, Piece::NA);
+    this->set_board(to,   promo_piece);
+
     this->bitboards[(int)Color::PAWN] ^= from_bit;
     this->bitboards[(int)promo_piece] ^= to_bit;
-
-    U64 bit_diff = from_bit | to_bit;
     this->bitboards[(int)Color::ALL] ^= bit_diff;
-    this->bitboards[(int)Piece::ALL] ^= bit_diff;
-    
-    this->en_passant = 0;
 }
 
 template<class Color>
-void Board::do_promo_capture(Move& m) {
-    constexpr bool turn = std::is_same<Color, White>::value;
-    constexpr int promo_offset = 6 * (1 - turn) - 2;
-    Piece promo_piece = (Piece)((int)m.get_flag() + (int)promo_offset);
-
-    Piece capture = this->get_board(m.get_to());
-    this->set_board(m.get_from(), Piece::GARBAGE);
-    this->set_board(m.get_to(),   promo_piece   );
-
-    U64 from_bit = m.get_from_bit();
-    U64 to_bit = m.get_to_bit();
-    this->bitboards[(int)Color::PAWN]    ^= from_bit;
-    this->bitboards[(int)promo_piece]    ^= to_bit;
-    this->bitboards[(int)capture]        ^= to_bit;
-    this->bitboards[(int)Color::OPP_ALL] ^= to_bit;
-
-    U64 bit_diff = from_bit | to_bit;
-    this->bitboards[(int)Color::ALL] ^= bit_diff;
-    this->bitboards[(int)Piece::ALL] = this->bitboards[(int)Color::ALL]
-                                     | this->bitboards[(int)Color::OPP_ALL]; // write straight from cache.
-    
-    this->en_passant = 0;
+void Board::do_en_passant(Context& ctx, Square from, Square to) {
+    Square cap_sq = to + Color::BACKWARD;
+    this->remove_piece<Color>(ctx, cap_sq, (Piece)Color::OPP_PAWN, (Piece)Color::OPP_ALL);
+    this->move_piece<Color>(ctx, (Piece)Color::PAWN, from, to);
 }
 
 template<class Color>
-void Board::do_en_passant(Move& m) {
-    Square en_passant_sq = m.get_to() + Color::BACKWARD;
-    this->set_board(m.get_from(),  Piece::GARBAGE);
-    this->set_board(m.get_to(),    Color::PAWN   );
-    this->set_board(en_passant_sq, Piece::GARBAGE);
+void Board::do_move(Move& m, Context& ctx) {
+    ctx.toggle_hash_turn();
+    ctx.toggle_castling_rights(m.get_from());
 
-    U64 from_bit = m.get_from_bit();
-    U64 to_bit = m.get_to_bit();
-    U64 bit_diff = from_bit | to_bit;
-    this->bitboards[(int)Color::PAWN] ^= bit_diff;
-    this->bitboards[(int)Color::ALL]  ^= bit_diff;
-
-    U64 en_passant_bit = 1ULL << en_passant_sq;
-    this->bitboards[(int)Color::OPP_PAWN] ^= en_passant_bit;
-    this->bitboards[(int)Color::OPP_ALL]  ^= en_passant_bit;
-    this->bitboards[(int)Piece::ALL] = this->bitboards[(int)Color::OPP_ALL]
-                                     | this->bitboards[(int)Color::ALL];
-
-    this->en_passant = 0;
-}
-
-template<class Color>
-void Board::do_move(Move& m) {
-    Flag fg = m.get_flag();
+    Flag   fg   = m.get_flag();
+    Square from = m.get_from();
+    Square to   = m.get_to();
+    Piece  pc   = this->get_board(from);
+    Piece  capt = m.get_capture();
 
     if (fg == Flag::REGULAR) {
-        if (m.get_capture() != Piece::NA) {
-            this->remove_piece<Color>(m.get_to(), m.get_capture(), (Piece)Color::OPP_ALL);
-        }
-        this->do_quiet<Color>(m);
-        return;
+        this->do_regular<Color>(ctx, pc, capt, from, to);
     }
-
-    if (fg == Flag::CASTLE) {
-        if (m.get_to() == Color::OO::KING_POST) {
-            this->do_castle<Color, typename Color::OO >(); return;
-        } else {
-            this->do_castle<Color, typename Color::OOO>(); return;
+    else if (fg == Flag::CASTLE) {
+        if (to == Color::OO::KING_POST) {
+            this->do_castle<Color, typename Color::OO >(ctx);
+        } 
+        else {
+            this->do_castle<Color, typename Color::OOO>(ctx);
         }
     }
-
-    if (fg == Flag::EN_PASSANT) {
-        this->remove_piece<Color>(m.get_to() + Color::BACKWARD, (Piece)Color::OPP_PAWN, (Piece)Color::OPP_ALL);
-        this->do_quiet<Color>(m);
-        return;
+    else if (fg == Flag::EN_PASSANT) {
+        this->do_en_passant<Color>(ctx, from, to);
     }
-
-    this->do_promo<Color>(m);
+    else {
+        this->do_promo<Color>(ctx, fg, capt, from, to);
+    }
 }
