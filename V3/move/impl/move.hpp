@@ -2,7 +2,9 @@
 
 #include "../Move.hpp"
 
-Move::Move() {}
+Move::Move() {
+    this->data = 0;
+}
 
 Move::Move(U32 data) {
     this->data = data;

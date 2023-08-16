@@ -130,12 +130,11 @@ void Board::gen_piece_moves(MoveList &moves, U64 filter) {
 
 template<class Color, class Castle>
 void Board::gen_castle(MoveList& moves, Context& ctx) {    
-    bool is_clear = (Castle::EMPTY_MASK & this->get_occ()) == 0ULL;
-    bool has_right = ctx.has_castling_rights<Castle>();
-    bool rook_exists = (this->bitboards[(int)Color::ROOK] & (1ULL << Castle::ROOK_PRE)) != 0ULL;
-
-    bool no_knight_attacks  = (Castle::KNIGHT_RISKS & this->bitboards[Color::OPP_KNIGHT]) == 0ULL;
-    bool no_pawn_attacks    = (Castle::PAWN_RISKS   & this->bitboards[Color::OPP_PAWN]  ) == 0ULL;
+    bool has_right          = ctx.has_castling_rights<Castle>();
+    bool is_clear           = (Castle::EMPTY_MASK & this->get_occ()) == 0ULL;
+    bool rook_exists        = (this->get_bitboard(Color::ROOK) & (1ULL << Castle::ROOK_PRE)) != 0ULL;
+    bool no_knight_attacks  = (Castle::KNIGHT_RISKS & this->get_bitboard(Color::OPP_KNIGHT)) == 0ULL;
+    bool no_pawn_attacks    = (Castle::PAWN_RISKS   & this->get_bitboard(Color::OPP_PAWN)  ) == 0ULL;
     bool no_sliding_attacks = sliding_castle_checks<Color, Castle>() == 0ULL;
 
     bool can_castle = is_clear & has_right & rook_exists
@@ -166,6 +165,4 @@ void Board::gen_moves(MoveList& moves, Context& ctx) {
             this->gen_castle<Color, typename Color::OOO>(moves, ctx);
         }
     }
-
-    moves.fill_moves(this);
 }

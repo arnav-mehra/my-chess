@@ -138,3 +138,56 @@
     //         }
     //     }
     // }
+
+
+U64 hmap_err1 = 0;
+U64 hmap_err2 = 0;
+std::unordered_map<U64, U16> hmap;
+
+// simulate 0-miss table
+// bool is_true_hit = hmap.find(new_ctx.hash) != hmap.end()
+//                 && hmap[new_ctx.hash] >= depth;
+// hmap_err1 += is_true_hit && !(cell != nullptr);
+// hmap_err2 += !is_true_hit && (cell != nullptr);
+// if (hmap.find(new_ctx.hash) != hmap.end()) {
+//     hmap.insert({ new_ctx.hash, depth });
+// } else {
+//     hmap[new_ctx.hash] = std::max(hmap[new_ctx.hash], depth);
+// }
+
+cout << "TT ER1 (undrshoot): " << Search::hmap_err1 / (Search::branches + 0.0) << '\n';
+            cout << "TT ER2 (overshoot): " << Search::hmap_err2 / (Search::branches + 0.0) << '\n';
+            
+
+// template<class Color>
+    // int quiscence(Board &b, int alpha, int beta) {
+    //     constexpr bool turn = std::is_same<Color, White>::value;
+        
+    //     MoveList ml; b.gen_moves<Color, Gen::CAPTURES>(ml);
+    //     ml.sort();
+        
+    //     int eval = -INFINITY;
+    //     int legal_caps = 0;
+
+    //     for (int i = 0; i < ml.size(); i++) {
+    //         b.do_move<Color>(ml[i], ctx);
+
+    //         if (b.get_checks<Color>() == 0ULL) { // filter out illegal moves
+    //             legal_caps++;
+
+    //             int temp_eval = turn ? -quiscence<Black>(b, -beta, -alpha)
+    //                                  : -quiscence<White>(b, -beta, -alpha);
+    //             eval = std::max(eval, temp_eval);
+    //             alpha = std::max(alpha, eval);
+    //         }
+
+    //         b.undo_move<Color>(ml[i]);
+    //         if (alpha >= beta) break;
+    //     }
+
+    //     if (legal_caps == 0) {
+    //         return turn ? Evaluate::piece_val(b) : -Evaluate::piece_val(b);
+    //     }
+
+    //     return eval;
+    // }

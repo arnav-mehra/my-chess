@@ -27,7 +27,13 @@ Context::Context(void* b_ptr, bool turn, bool castling_rights[4]) {
     }
 }
 
-Context::Context(Context &ctx) {
+Context::Context(Context& ctx) {
+    this->moved = ctx.moved;
+    this->hash = ctx.hash;
+    this->en_passant = 0;
+}
+
+Context::Context(const Context& ctx) {
     this->moved = ctx.moved;
     this->hash = ctx.hash;
     this->en_passant = 0;

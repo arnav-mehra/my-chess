@@ -6,8 +6,7 @@
 #include "../util/conversion.hpp"
 #include <iostream>
 
-class Move {
-public:
+struct Move {
     U32 data; // [-----SC-----|CAPT|FLAG|-FROM-|--TO--]
 
     Move();
@@ -26,14 +25,11 @@ public:
     U64 get_from_bit();
     U64 get_to_bit();
 
-    void set_score_capt(void* b);
+    void set_score_capt(void* b, U16 depth);
+    U16 get_move_score(Piece pc, Piece capt, U16 depth);
 
     bool operator==(const Move& m);
     bool operator> (const Move& m);
-
-    static U32 get_move_score(Flag flag, Piece pc, Piece capt);
-    template<Flag flag>
-    static U32 get_move_score(Piece pc, Piece capt);
 
     void print();
 };

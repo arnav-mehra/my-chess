@@ -34,8 +34,8 @@ enum class Piece { // 4 bits
 
 enum class Flag : Square { // colors tested for
     REGULAR      = 0,
-    EN_PASSANT   = 1,
-    CASTLE       = 2,
+    CASTLE       = 1,
+    EN_PASSANT   = 2,
     KNIGHT_PROMO = 3,
     BISHOP_PROMO = 4,
     ROOK_PROMO   = 5,
