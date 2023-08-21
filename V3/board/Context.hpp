@@ -7,6 +7,7 @@ struct Context {
     U64 hash; // zobrist hash
     Square en_passant;
 
+    Context();
     Context(Context&);
     Context(const Context&);
     Context(void* b_ptr, bool turn, bool castling_rights[4]);

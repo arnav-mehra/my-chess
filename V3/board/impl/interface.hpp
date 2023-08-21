@@ -3,6 +3,7 @@
 #include "../Board.hpp"
 #include "../../util/conversion.hpp"
 #include "../../util/assertion.hpp"
+#include "../../search/search.hpp"
 #include "context.hpp"
 #include <cstdio>
 #include <iostream>
@@ -13,23 +14,25 @@
 #define MAX_FEN_CASTLING_LENGTH 4
 #define MAX_FEN_EN_PASSANT_LENGTH 2
 
-Context Board::from_fen(std::string fen_str) {
+Context Board::from_fen(std::string fen_str, bool& turn) {
 
     // Dissect String
 
     char fen_board[MAX_FEN_BOARD_LENGTH + 1];
     char castling[MAX_FEN_CASTLING_LENGTH + 1];
     char en_passant[MAX_FEN_EN_PASSANT_LENGTH + 1];
-    char turn;
+    char turn_char;
     int halfmove, fullmove;
 
     std::sscanf(
         fen_str.c_str(),
         "%s %c %s %s %d %d",
-        fen_board, &turn,
+        fen_board, &turn_char,
         castling, en_passant,
         &halfmove, &fullmove
     );
+
+    turn = turn_char == 'w';
 
     // std::cout << "IN: " << fen_str << '\n'
     //           << "FB: " << fen_board << '\n'
@@ -133,61 +136,77 @@ Flag Board::derive_flag(Square from, Square to) {
     return Flag::REGULAR;
 }
 
-void CLI(std::string fen_str) {
+void CLI() {
     Board b;
-    Context ctx = b.from_fen(fen_str);
-    // b.assert_board_consistency();
-
-    std::stack<Move> move_hist;
-    std::stack<Board> board_hist; board_hist.push(b);
     bool turn = true;
+    Context ctx;
+    Move best_move;
 
     while (true) {
-        std::cout << '\n';
-        b.print();
-
-        MoveList ml = MoveList();
-        if (turn) b.gen_moves<White, Gen::PSEUDOS>(ml, ctx);
-             else b.gen_moves<Black, Gen::PSEUDOS>(ml, ctx);
-        ml.print();
-
-        std::cout << "\nPlay " << (turn ? "White" : "Black") << " Move: ";
         std::string s; std::cin >> s;
 
-        if (s.size() >= 1 && s[0] == 'u') {
-            std::cout << "Undoing move...\n";
+        if (s.compare("uci") == 0) {
+            std::cout << "uciok\n";
+            continue;
+        }
+        if (s.compare("isready") == 0) {
+            std::cout << "readyok\n";
+            continue;
+        }
+        if (s.compare("ucinewgame") == 0) {
+            std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+            ctx = b.from_fen(fen, turn);
+            continue;
+        }
 
-            Move move = move_hist.top();
-            move_hist.pop();
-            board_hist.pop();
-            if (turn) b.undo_move<Black>(move);
-                 else b.undo_move<White>(move);
-            turn = !turn;
+        if (s.substr(0, 3).compare("fen") == 0) {
+            int i = s.find("moves");
+            std::string fen = s.substr(4, i - 5);
+
+            if (fen.compare("startpos") == 0) fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+            ctx = b.from_fen(fen, turn);
             
-            assert("UNDO FAILED: PRIOR BOARD INEQUIVALENCY", b == board_hist.top());
-            success("UNDO SUCCESSFUL!");
+            std::string moves = s.substr(i + 6);
+            std::string rem = moves;
+            while (rem.size() >= 4) {
+                std::string s = rem.substr(0, 4);
+                rem = rem.substr(5);
+
+                MoveList ml = MoveList();
+                if (turn) b.gen_moves<White, Gen::PSEUDOS>(ml, ctx);
+                     else b.gen_moves<Black, Gen::PSEUDOS>(ml, ctx);
+                
+                U8 from = string_to_square_num(s[0], s[1]);
+                U8 to   = string_to_square_num(s[2], s[3]);
+
+                Move ponder_move;
+                for (int i = 0; i < ml.size(); i++) {
+                    if (ml[i].get_from() == from && ml[i].get_to() == to) {
+                        ponder_move = ml[i];
+                        break;
+                    }
+                }
+
+                if (turn) b.do_move<White>(ponder_move, ctx);
+                     else b.do_move<Black>(ponder_move, ctx);
+                turn = !turn;
+            }
+
             continue;
         }
 
-        if (s.size() != 4) {
-            std::cout << "Invalid move.\n";
+        if (s.substr(0, 2).compare("go") == 0) {
+            auto [ eval, move ] = turn ? Search::search<White>(b, ctx, 8)
+                                       : Search::search<Black>(b, ctx, 8);
+            best_move = move;
             continue;
         }
-
-        Square from = string_to_square_num(s[0], s[1]);
-        Square to = string_to_square_num(s[2], s[3]);
-
-        std::cout << PIECE_NAMES[(int)b.get_board(from)] << ' ';        
-        Flag flag = turn ? b.derive_flag<White>(from, to)
-                         : b.derive_flag<Black>(from, to);
-        Move move = Move();
-        move.print();
-
-        if (turn) b.do_move<White>(move, ctx);
-             else b.do_move<Black>(move, ctx); 
-        turn = !turn;     
-        move_hist.push(move);
-        board_hist.push(b);
-        // b.assert_board_consistency();
+        if (s.compare("stop") == 0) {
+            std::cout << "bestmove " << best_move.to_string() << "\n";
+            if (turn) b.do_move<White>(best_move, ctx);
+                 else b.do_move<Black>(best_move, ctx);
+            turn = !turn;
+            continue;
+        }
     }
 }

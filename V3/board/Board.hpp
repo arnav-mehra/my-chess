@@ -48,7 +48,7 @@ public:
 
     // interface.hpp
 
-    Context from_fen(std::string fen_str);
+    Context from_fen(std::string fen_str, bool& turn);
     void print();
     template<class> Flag derive_flag(Square from, Square to);
 

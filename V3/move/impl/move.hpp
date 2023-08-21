@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Move.hpp"
+#include <string>
 
 Move::Move() {
     this->data = 0;
@@ -59,10 +60,7 @@ bool Move::operator>(const Move& m) {
     return this->data > m.data;
 }
 
-void Move::print() {
-    std::cout << "Move: "
-              << square_num_to_string((int)get_from())
-              << square_num_to_string((int)get_to())
-              << " (" << FLAG_NAMES[(int)get_flag()] 
-              << ")\n";
+std::string Move::to_string() {
+    return square_num_to_string((int)get_from())
+         + square_num_to_string((int)get_to());
 }

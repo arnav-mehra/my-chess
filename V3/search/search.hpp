@@ -207,11 +207,11 @@ namespace Search {
             std::chrono::duration<double> elapsed_seconds = end - start;
             t += elapsed_seconds.count();
 
-            std::cout << "D: " << i << "\t"
-                      << "t: " << elapsed_seconds.count() << "\t"
-                      << "T: " << t << '\n';
+            // std::cout << "D: " << i << "\t"
+            //           << "t: " << elapsed_seconds.count() << "\t"
+            //           << "T: " << t << '\n';
             if (t > 0.2) {
-                std::cout << "\nDEPTH: " << i << "/" << depth << '\n';
+                // std::cout << "\nDEPTH: " << i << "/" << depth << '\n';
                 break;
             }
         }

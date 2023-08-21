@@ -18,42 +18,44 @@ static Board b;
 int main(int argc, char** argv) {
     init();
 
-    Context ctx = b.from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
+    CLI();
+
+    // Context ctx = b.from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
 
     // cout << hex << ctx.hash;
 
     // Perft::run<White>(b, ctx, 5); // , "tests/perft_solution.txt"
 
-    bool turn = true;
+    // bool turn = true;
     
     // while (true) {
-        time_fn([turn, ctx]() {
+        // time_fn([turn, ctx]() {
 
-            Context _ctx = ctx;
-            auto [ eval, move ] = turn ? Search::search<White>(b, _ctx, 8)
-                                       : Search::search<Black>(b, _ctx, 8);
+        //     Context _ctx = ctx;
+        //     auto [ eval, move ] = turn ? Search::search<White>(b, _ctx, 8)
+        //                                : Search::search<Black>(b, _ctx, 8);
 
-            cout << "EVAL: " << eval << '\n';
-            move.print();
-            cout << '\n';
+        //     cout << "EVAL: " << eval << '\n';
+        //     move.print();
+        //     cout << '\n';
 
-            // if (turn) b.do_move<White>(Search::best_move, _ctx);
-            // else      b.do_move<Black>(Search::best_move, _ctx);
+        //     // if (turn) b.do_move<White>(Search::best_move, _ctx);
+        //     // else      b.do_move<Black>(Search::best_move, _ctx);
 
-            cout << "Branches:\t"       << Search::branches  << '\n';
-            cout << "BF:\t\t"           << Search::branches / (Search::nodes + 0.0) << '\n';
-            cout << '\n';
-            cout << "TT Hits:\t"        << Search::tt_hits     << '\n';
-            cout << "TT Partials:\t"    << Search::tt_partials << '\n';
-            cout << "TT Misses:\t"      << Search::tt_misses   << '\n';
-            cout << '\n';
-            cout << "Killer Entries:\t" << KillerTable::fill << '\n';
-            cout << "Killer Hits:\t"    << KillerTable::hits << '\n';
-            cout << "Killer Misses:\t"  << KillerTable::misses << '\n';
-            cout << '\n';
-            // cout << "TTHR: " << Search::tt_hits / (Search::branches + 0.0) << '\n';
-        });
-        turn = !turn;
+        //     cout << "Branches:\t"       << Search::branches  << '\n';
+        //     cout << "BF:\t\t"           << Search::branches / (Search::nodes + 0.0) << '\n';
+        //     cout << '\n';
+        //     cout << "TT Hits:\t"        << Search::tt_hits     << '\n';
+        //     cout << "TT Partials:\t"    << Search::tt_partials << '\n';
+        //     cout << "TT Misses:\t"      << Search::tt_misses   << '\n';
+        //     cout << '\n';
+        //     cout << "Killer Entries:\t" << KillerTable::fill << '\n';
+        //     cout << "Killer Hits:\t"    << KillerTable::hits << '\n';
+        //     cout << "Killer Misses:\t"  << KillerTable::misses << '\n';
+        //     cout << '\n';
+        //     // cout << "TTHR: " << Search::tt_hits / (Search::branches + 0.0) << '\n';
+        // });
+        // turn = !turn;
     // }
     
     // perft<White>(b, 6);

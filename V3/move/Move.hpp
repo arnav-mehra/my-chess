@@ -5,6 +5,7 @@
 #include "../util/util.hpp"
 #include "../util/conversion.hpp"
 #include <iostream>
+#include <string>
 
 struct Move {
     U32 data; // [-----SC-----|CAPT|FLAG|-FROM-|--TO--]
@@ -31,5 +32,5 @@ struct Move {
     bool operator==(const Move& m);
     bool operator> (const Move& m);
 
-    void print();
+    std::string to_string();
 };

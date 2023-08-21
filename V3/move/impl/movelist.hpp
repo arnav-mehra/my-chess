@@ -54,7 +54,6 @@ void MoveList::add_promos(Square from, Square to) {
 void MoveList::print() {
     std::cout << "MOVES: " << cnt << '\n';
     for (int i = 0; i < cnt; i++) {
-        std::cout << (i + 1) << ": ";
-        move_list[i].print();
+        std::cout << (i + 1) << ": " << move_list[i].to_string() << '\n';
     }
 }
