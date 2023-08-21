@@ -15,6 +15,9 @@
 #define MAX_FEN_EN_PASSANT_LENGTH 2
 
 Context Board::from_fen(std::string fen_str, bool& turn) {
+    if (fen_str.compare("startpos") == 0) {
+        fen_str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    }
 
     // Dissect String
 
@@ -159,18 +162,24 @@ void CLI() {
             continue;
         }
 
-        if (s.substr(0, 3).compare("fen") == 0) {
-            int i = s.find("moves");
-            std::string fen = s.substr(4, i - 5);
+        if (s.compare("fen") == 0) {
+            std::string ln;
+            std::getline(std::cin, ln);
+            ln = ln.substr(1);
 
-            if (fen.compare("startpos") == 0) fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+            size_t i = ln.find("moves");
+            if (i == std::string::npos) {
+                ctx = b.from_fen(ln, turn);
+                continue;
+            }
+
+            std::string fen = ln.substr(0, i - 1);
             ctx = b.from_fen(fen, turn);
-            
-            std::string moves = s.substr(i + 6);
-            std::string rem = moves;
-            while (rem.size() >= 4) {
-                std::string s = rem.substr(0, 4);
-                rem = rem.substr(5);
+            b.print();
+
+            std::string moves = ln.substr(i + 6);
+            while (true) {
+                std::string s = moves.substr(0, 4);
 
                 MoveList ml = MoveList();
                 if (turn) b.gen_moves<White, Gen::PSEUDOS>(ml, ctx);
@@ -179,18 +188,26 @@ void CLI() {
                 U8 from = string_to_square_num(s[0], s[1]);
                 U8 to   = string_to_square_num(s[2], s[3]);
 
-                Move ponder_move;
+                Move move = Move(0);
                 for (int i = 0; i < ml.size(); i++) {
                     if (ml[i].get_from() == from && ml[i].get_to() == to) {
-                        ponder_move = ml[i];
+                        move = ml[i];
                         break;
                     }
                 }
+                if (move.get_raw() == 0) {
+                    std::cout << "invalid move";
+                    exit(1);
+                }
 
-                if (turn) b.do_move<White>(ponder_move, ctx);
-                     else b.do_move<Black>(ponder_move, ctx);
+                if (turn) b.do_move<White>(move, ctx);
+                     else b.do_move<Black>(move, ctx);
                 turn = !turn;
+
+                if (moves.size() <= 5) break;
+                moves = moves.substr(5);
             }
+            b.print();
 
             continue;
         }
