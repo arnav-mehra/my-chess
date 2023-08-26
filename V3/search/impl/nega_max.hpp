@@ -16,7 +16,6 @@ MoveScore Search::nega_max(
     nodes++;
 
     if (DrawTable::is_draw()) {
-        leaves++;
         return { Move(), 0 };
     }
 
@@ -25,20 +24,22 @@ MoveScore Search::nega_max(
     auto [ tt_hit, tt_cell ] = TranspositionTable::get_cell(ctx.hash, depth);
     if (tt_hit && tt_cell->get_depth() >= depth) {
         switch (tt_cell->node_type) {
-            case NodeType::EXACT: return { tt_cell->move, tt_cell->score };
+            case NodeType::EXACT: {
+                return { tt_cell->move, tt_cell->score };
+            }
             case NodeType::LOWER: alpha = std::max(alpha, tt_cell->score);
             case NodeType::UPPER: beta  = std::min(beta,  tt_cell->score);
         }
-        if (alpha >= beta) return { tt_cell->move, tt_cell->score };
+        if (alpha >= beta) {
+            // KillerTable::add_move(tt_cell->move, depth);
+            return { tt_cell->move, tt_cell->score };
+        }
     }
-    tt_hits += tt_hit;
-    tt_misses += !tt_hit;
     Move priority_move = tt_hit ? tt_cell->move : Move();
 
     // Quiescence: at nega_max leaf.
 
     if (depth == 0) {
-        leaves++;
         I16 score = quiesce<Color>(b, ctx, alpha, beta);
         return { Move(), score };
     }
@@ -87,7 +88,6 @@ MoveScore Search::nega_max(
     // Checkmate or Stalemate.
 
     if (legal_move_count == 0) {
-        leaves++;
         I16 score = b.get_checks<Color>() ? -INFINITY : 0;
         best = { Move(), score };
     }

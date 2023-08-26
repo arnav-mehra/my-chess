@@ -95,7 +95,7 @@ U32 Move::get_quiet_score(Piece pc, Flag flag, U16 depth, Move& priority) {
     bool is_quiet = not_known;
 
     U32 priority_bonus = MAX_SCORE;
-    U32 killer_bonus   = CAPT_SCORE - 1U;
+    U32 killer_bonus   = 1U;
     U32 quiet_bonus    = 0U;
     U32 promo_bonus    = CAPT_SCORE - PC_VALS[(int)Piece::WHITE_PAWN] + FLAG_VALS[(int)flag];
 
@@ -124,9 +124,9 @@ void Move::set_score_capt(void* b_ptr, Move& priority, U16 depth) {
     U32 is_reversable = (
         (flag == Flag::CASTLE) // castles are reversable (artifically)
         | (
-            (flag == Flag::REGULAR) // regular non-pawn non-capture are reversable
-            & (pc != (Piece)Color::PAWN)
+            (flag == Flag::REGULAR) // non-pawn non-captures are reversable
             & (capt == (Piece)Piece::NA)
+            & (pc != (Piece)Color::PAWN)
         )
     );
     this->data |= is_reversable << 20;

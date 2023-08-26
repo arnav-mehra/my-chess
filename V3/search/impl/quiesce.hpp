@@ -12,7 +12,6 @@ I16 Search::quiesce(
     constexpr bool turn = std::is_same<Color, White>::value;
 
     I16 eval = (I16)(turn ? 1 : -1) * Evaluate::pestos(b);
-    return eval;
     
     if (eval >= beta) return beta;
     alpha = std::max(alpha, eval);

@@ -30,7 +30,7 @@ MoveScore Search::search(
         // std::cout << i << ": "
         //           << best.move.to_string() << " - "
         //           << (best.eval * (turn ? 1 : -1)) << '\n';
-        if (t > 0.4) break;
+        // if (t > 0.5) break;
     }
 
     return best;
