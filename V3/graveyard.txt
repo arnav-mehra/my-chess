@@ -8,6 +8,126 @@
 // 56 57 58 59 60 61 62 63
 
 
+    template<class Color>
+    inline MoveScore nega_max_eval(
+        Board& b,
+        Context& new_ctx,
+        U16 depth,
+        I16 alpha,
+        I16 beta
+    );
+    template<class Color>
+    inline MoveScore nega_max_eval(
+        Board& b,
+        Context& new_ctx,
+        U16 depth,
+        I16 alpha,
+        I16 beta
+    ) {
+        constexpr bool turn = std::is_same<Color, White>::value;
+
+        U64* cell = TranspositionTable::get_cell(new_ctx.hash, depth);
+
+        // TT hit: use eval and/or move of cached result.
+        if (cell) {
+            if (TranspositionTable::get_depth(cell) >= depth) {
+                tt_hits++;
+
+                return TranspositionTable::get_eval_move(cell);
+            }
+            else {
+                tt_partials++;
+
+                Move next_order_first = TranspositionTable::get_move(cell);
+                MoveScore local_best = (
+                    turn ? nega_max<Black>(b, new_ctx, depth - 1, next_order_first, -beta, -alpha)
+                         : nega_max<White>(b, new_ctx, depth - 1, next_order_first, -beta, -alpha)
+                );
+                local_best.eval *= -1;
+
+                TranspositionTable::get_eval(cell) = local_best.eval;
+                TranspositionTable::get_move(cell) = local_best.move;
+                return local_best;
+            }
+        }
+
+        // TT miss: compute fully and set.
+        tt_misses++;
+
+        MoveScore local_best = (
+            turn ? nega_max<Black>(b, new_ctx, depth - 1, Move(), -beta, -alpha)
+                 : nega_max<White>(b, new_ctx, depth - 1, Move(), -beta, -alpha)
+        );
+        local_best.eval *= -1;
+
+        TranspositionTable::set_cell(new_ctx.hash, depth, local_best.move, local_best.eval, 0);
+        return local_best;
+    }
+
+
+// bool turn;
+    // Context ctx = b.from_fen("startpos", turn);
+    // b.print();
+    // cout << hex << ctx.hash << "\n";
+
+    // play_moves(
+    //     "e2e4",
+    //     b, ctx, turn
+    // );
+
+    // play_moves(
+    //     "e2e4 c7c5 f1e2 b8c6 b1c3 e7e6 g1f3 g8f6 d2d3 d7d5 e4e5 f6d7 c1f4 d5d4 c3e4 c5c4 e1g1 c4d3 e2d3 h7h6 d3b5 d8b6 b5c6 b6b2 a1b1 b2b1 c6d7 e8e7",
+    //     b, ctx, turn
+    // );
+    // cout << hex << ctx.hash << "\n";
+
+    // Perft::run<White>(b, ctx, 3); // , "tests/perft_solution.txt"
+
+    // bool turn = true;
+    
+    // while (true) {
+        // time_fn([turn, ctx]() {
+
+        //     Context _ctx = ctx;
+        //     auto [ eval, move ] = turn ? Search::search<White>(b, _ctx, 8)
+        //                                : Search::search<Black>(b, _ctx, 8);
+
+        //     cout << "EVAL: " << eval << '\n';
+        //     move.print();
+        //     cout << '\n';
+
+        //     // if (turn) b.do_move<White>(Search::best_move, _ctx);
+        //     // else      b.do_move<Black>(Search::best_move, _ctx);
+
+        //     cout << "Branches:\t"       << Search::branches  << '\n';
+        //     cout << "BF:\t\t"           << Search::branches / (Search::nodes + 0.0) << '\n';
+        //     cout << '\n';
+        //     cout << "TT Hits:\t"        << Search::tt_hits     << '\n';
+        //     cout << "TT Partials:\t"    << Search::tt_partials << '\n';
+        //     cout << "TT Misses:\t"      << Search::tt_misses   << '\n';
+        //     cout << '\n';
+        //     cout << "Killer Entries:\t" << KillerTable::fill << '\n';
+        //     cout << "Killer Hits:\t"    << KillerTable::hits << '\n';
+        //     cout << "Killer Misses:\t"  << KillerTable::misses << '\n';
+        //     cout << '\n';
+        //     // cout << "TTHR: " << Search::tt_hits / (Search::branches + 0.0) << '\n';
+        // });
+        // turn = !turn;
+    // }
+    
+    // perft<White>(b, 6);
+
+    // U64 cells[2] = {};
+    // cout << hex << cells[0] << ' ' << hex << cells[1] << '\n';
+    // U16* arr = (U16*)cells;
+    // arr[0] = 0xffff;
+    // cout << hex << cells[0] << ' ' << hex << cells[1];
+    // [ 3210, 7654 ]
+    // [ 10, 32 ]
+    // [ 0, 1 ]
+
+    ----------------------------------------------
+
     // perft<White>(b, depth, "t.txt");
 
     // CLI(INITIAL_FEN);

@@ -1,105 +1,91 @@
+#pragma once
+
 #include "../util/types.hpp"
 #include "../move/Move.hpp"
 
-struct EvalMove {
-    I16 eval;
-    Move move;
+enum NodeType : U8 {
+    EXACT,
+    LOWER,
+    UPPER
 };
 
+struct MoveScore {
+    Move move;
+    I16 score;
+};
+
+constexpr bool USE_TRANSPOSITION_TABLE = true;
+
 namespace TranspositionTable {
-    constexpr size_t IDX_BITS = 16;
+
+    // Constants
+
+    constexpr size_t IDX_BITS = 19;
     constexpr U64    IDX_MASK = ((1ULL << IDX_BITS) - 1ULL);
-    constexpr size_t TT_SIZE = 1ULL << IDX_BITS;
-    constexpr size_t ENTRY_SIZE = 4; // 4 U64 within a single entry/record
+    constexpr U64    HV_MASK  = ~IDX_MASK;
+    constexpr size_t TT_SIZE  = 1ULL << IDX_BITS;
 
-    U64 table[TT_SIZE * ENTRY_SIZE] = {};
+    // Data Structures
 
-    // entry = {
-    //      cell 1: most recently used   (high quantity hits),
-    //      cell 2: highest depth result (high quality hits)
-    // }
+    struct Cell {
+        U64 hash_depth; // [ 45-bit hash | 3-bit gap | 16-bit depth ]
+        Move move;
+        I16 score;
+        NodeType node_type;
 
-    // cell = {
-    //      [48-bit hash_val][16-bit depth],
-    //      [32-bit move][16-bit eval][16-bit node-type],
-    // }
+        U64 get_hash()  { 
+            return hash_depth >> IDX_BITS;
+        }
+        U16 get_depth() {
+            return (U16)(hash_depth & IDX_MASK);
+        }
+    };
 
-    inline U64* get_entry(U64 hash) {
+    struct Entry {
+        Cell rec_cell; // recency_cell
+        Cell dep_cell; // depth_cell
+    };
+
+    Entry table[TT_SIZE] = {};
+
+    // Functions
+
+    inline Entry* get_entry(U64 hash) {
         U64 idx = hash & IDX_MASK;
-        return &table[idx * ENTRY_SIZE];
+        return &table[idx];
     }
 
-    inline U64 get_hash_val(U64* cell) {
-        return cell[0] >> IDX_BITS;
-    }
+    inline std::pair<bool, Cell*> get_cell(U64 hash, U16 min_depth) {
+        if constexpr (!USE_TRANSPOSITION_TABLE) return { false, nullptr };
 
-    inline U16& get_depth(U64* cell) {
-                                // { 3, 2, 1, 0, 7, 6, 5, 4 }. Note: flip due to endianness.
-        return ((U16*)cell)[0]; // { h, h, h, d, m, m, e, n }.
-    }
-
-    inline Move& get_move(U64* cell) {
-                                 // { 1,   0, 3,   2 }
-        return ((Move*)cell)[3]; // { h, h-d, m, e-n }
-    }
-
-    inline I16& get_eval(U64* cell) {
-                                // { 3, 2, 1, 0, 7, 6, 5, 4 }. Note: flip due to endianness.
-        return ((I16*)cell)[5]; // { h, h, h, d, m, m, e, n }
-    }
-
-    inline EvalMove get_eval_move(U64* cell) {
-                 // { 3, 2, 1, 0, 7, 6, 5, 4 }. Note: flip due to endianness.
-        return { // { h, h, h, d, m, m, e, n }
-            get_eval(cell),
-            get_move(cell)
-        };
-    }
-
-
-    inline U16& get_node_type(U64* cell) {
-                                // { 3, 2, 1, 0, 7, 6, 5, 4 }. Note: flip due to endianness.
-        return ((U16*)cell)[4]; // { h, h, h, d, m, m, e, n }
-    }
-
-    inline U64* get_cell(U64 hash, U16 min_depth) {
-        U64* entry = get_entry(hash);
-        U64* rcell = &entry[0];
-        U64* dcell = &entry[2];
+        Entry* entry = get_entry(hash);
+        Cell* rec_cell = &(entry->rec_cell);
+        Cell* dep_cell = &(entry->dep_cell);
 
         U64 hash_val = hash >> IDX_BITS;
-        U64 rhash  = get_hash_val(rcell);
-        U16 rdepth = get_depth(rcell);
-        U64 dhash  = get_hash_val(dcell);
-        U16 ddepth = get_depth(dcell);
-
-        if (hash_val == dhash) return dcell;
-        if (hash_val == rhash) return rcell;
-        return nullptr;
+        // check with depth cell first (optimal accuracy).
+        if (hash_val == dep_cell->get_hash()) return { true, dep_cell };
+        // check with recency cell second (optimal hitrate).
+        if (hash_val == rec_cell->get_hash()) return { true, rec_cell };
+        // complete miss, return replacement cell.
+        Cell* rep_cell = (min_depth >= dep_cell->get_depth()) ? dep_cell : rec_cell;
+        return { false, rep_cell };
     }
 
-    void init_cell(U64* cell, U64 hash, U16 depth, Move move, I16 eval, U32 node_type) {
-        cell[0] = hash;
-        get_depth(cell)     = depth; // will overwrite hash's 16-bit violation.
-        get_move(cell)      = move;
-        get_eval(cell)      = eval;
-        get_node_type(cell) = node_type;
+    inline void set_cell(Cell* cell, U64 hash, U16 depth, MoveScore ms, I16 og_alpha, I16 beta) {
+        if constexpr (!USE_TRANSPOSITION_TABLE) return;
+
+        cell->hash_depth = (hash & HV_MASK) | (U64)depth;
+        cell->score = ms.score;
+        cell->move = ms.move;
+        cell->node_type = ms.score <= og_alpha ? NodeType::UPPER
+                        : ms.score >= beta     ? NodeType::LOWER
+                        : NodeType::EXACT;
     }
 
-    inline void set_cell(U64 hash, U16 depth, Move move, I16 eval, U32 node_type) {
-        U64* entry = get_entry(hash);
-        U64* rcell = &entry[0];
-        U64* dcell = &entry[2];
-        U64 ddepth = get_depth(dcell);
-
-        U64 new_cell[2];
-        init_cell(new_cell, hash, depth, move, eval, node_type);
-
-        if (depth > ddepth) {
-            memcpy(dcell, new_cell, 16);
-            return;
+    void clear_dep_cells() {
+        for (Entry& entry : table) {
+            entry.dep_cell.hash_depth = 0ULL;
         }
-        memcpy(rcell, new_cell, 16);
     }
-
 };

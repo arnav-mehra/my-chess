@@ -8,22 +8,6 @@ Move& MoveList::operator[](int i) {
     return move_list[i];
 }
 
-void MoveList::prioritize(Move& m) {
-    constexpr U32 MASK = (1ULL << 12) - 1;
-
-    int idx = -1;
-    for (int i = 0; i < this->size(); i++) {
-        if ((move_list[i].get_raw() & MASK) == (m.get_raw() & MASK)) {
-            idx = i;
-            break;
-        }
-    }
-    if (idx == -1) return;
-
-    move_list[idx] = move_list[0];
-    move_list[0] = m;
-}
-
 void MoveList::clear() {
     cnt = 0;
 }

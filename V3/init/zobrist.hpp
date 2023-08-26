@@ -3,6 +3,8 @@
 #include "../move/Move.hpp"
 #include "../board/Board.hpp"
 
+#include <unordered_set>
+
 #define IMAX_BITS(m) ((m)/((m)%255+1) / 255%255*8 + 7-86/((m)%255+12))
 #define RAND_MAX_WIDTH IMAX_BITS(RAND_MAX)
 

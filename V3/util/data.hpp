@@ -79,6 +79,7 @@ class White { public:
         static Square NON_CHECKS[3];
         static U64 KNIGHT_RISKS;
         static U64 PAWN_RISKS;
+        static U64 KING_RISKS;
 
         enum Squares : Square {
             KING_PRE  = 60,
@@ -99,6 +100,7 @@ class White { public:
         static Square NON_CHECKS[3];
         static U64 KNIGHT_RISKS;
         static U64 PAWN_RISKS;
+        static U64 KING_RISKS;
 
         enum Squares : Square {
             ROOK_PRE  = 56,
@@ -159,6 +161,7 @@ class Black { public:
         static Square NON_CHECKS[3];
         static U64 KNIGHT_RISKS;
         static U64 PAWN_RISKS;
+        static U64 KING_RISKS;
 
         enum Squares : Square {
             KING_PRE  = 04,
@@ -179,6 +182,7 @@ class Black { public:
         static Square NON_CHECKS[3];
         static U64 KNIGHT_RISKS;
         static U64 PAWN_RISKS;
+        static U64 KING_RISKS;
 
         enum Squares : Square {
             ROOK_PRE  = 00,
@@ -240,13 +244,17 @@ U64 Black::PAWN_ATTACKS[64];
 Square White::OO::NON_CHECKS[3] = { 60, 61, 62 };
 U64 White::OO::KNIGHT_RISKS;
 U64 White::OO::PAWN_RISKS;
+U64 White::OO::KING_RISKS;
 Square White::OOO::NON_CHECKS[3] = { 60, 59, 58 };
 U64 White::OOO::KNIGHT_RISKS;
 U64 White::OOO::PAWN_RISKS;
+U64 White::OOO::KING_RISKS;
 
 Square Black::OO::NON_CHECKS[3] = { 4, 5, 6 };
 U64 Black::OO::KNIGHT_RISKS;
 U64 Black::OO::PAWN_RISKS;
+U64 Black::OO::KING_RISKS;
 Square Black::OOO::NON_CHECKS[3] = { 2, 3, 4 };
 U64 Black::OOO::KNIGHT_RISKS;
 U64 Black::OOO::PAWN_RISKS;
+U64 Black::OOO::KING_RISKS;

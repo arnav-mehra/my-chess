@@ -2,6 +2,7 @@
 
 #include "../Board.hpp"
 #include "context.hpp"
+#include "../../search/DrawTable.hpp"
 
 template<class Color>
 void inline Board::remove_piece(Square sq, Piece pc, Piece pc_col_all) {
@@ -110,7 +111,9 @@ void inline Board::do_en_passant(Context& ctx, Square from, Square to) {
 }
 
 template<class Color>
-void Board::do_move(Move& m, Context& ctx) {
+Context Board::do_move(Move& m, Context& old_ctx) {
+    Context ctx = old_ctx;
+    ctx.en_passant = 0;
     ctx.toggle_hash_turn();
     ctx.toggle_castling_rights(m.get_from());
 
@@ -137,4 +140,8 @@ void Board::do_move(Move& m, Context& ctx) {
     else {
         this->do_promo<Color>(ctx, fg, capt, from, to);
     }
+
+    DrawTable::push_position(m, ctx.hash);
+
+    return ctx;
 }

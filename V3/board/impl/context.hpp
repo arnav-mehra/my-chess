@@ -21,25 +21,11 @@ Context::Context(void* b_ptr, bool turn, bool castling_rights[4]) {
     Board& b = *((Board*)b_ptr);
     for (int i = 0; i < 64; i++) {
         Piece pc = b.get_board(i);
-        if (pc != Piece::NA) {
-            this->hash ^= ZOBRIST::piece_rands[(int)pc][i];
-        }
+        this->hash ^= ZOBRIST::piece_rands[(int)pc][i];
     }
 }
 
 Context::Context() {}
-
-Context::Context(Context& ctx) {
-    this->moved = ctx.moved;
-    this->hash = ctx.hash;
-    this->en_passant = 0;
-}
-
-Context::Context(const Context& ctx) {
-    this->moved = ctx.moved;
-    this->hash = ctx.hash;
-    this->en_passant = 0;
-}
 
 void Context::toggle_hash_turn() {
     hash ^= ZOBRIST::turn_rand;
@@ -72,10 +58,10 @@ void Context::set_en_passant(Piece pc, Square from, Square to) {
 }
 
 template<class Castle>
-bool Context::has_castling_rights() {
+U64 Context::moved_castling_pieces() {
     constexpr U64 CASTLING_MASK = (
           (1ULL << (int)Castle::KING_PRE)
         | (1ULL << (int)Castle::ROOK_PRE)
     );
-    return (CASTLING_MASK & moved) == 0ULL;
+    return CASTLING_MASK & moved;
 }

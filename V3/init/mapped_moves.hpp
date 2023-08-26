@@ -45,10 +45,14 @@ namespace MAPPED_MOVES {
 
     template<class Color, class Castle>
     void init_mapped_castling_threats() {
-        Castle::KNIGHT_RISKS = 0ULL, Castle::PAWN_RISKS = 0ULL;
+        Castle::KNIGHT_RISKS = 0ULL;
+        Castle::PAWN_RISKS = 0ULL;
+        Castle::KING_RISKS = 0ULL;
+
         for (Square sq : Castle::NON_CHECKS) {
             Castle::KNIGHT_RISKS |= KNIGHT_MOVES[sq];
             Castle::PAWN_RISKS   |= Color::PAWN_ATTACKS[sq];
+            Castle::KING_RISKS   |= KING_MOVES[sq];
         }
     }
 

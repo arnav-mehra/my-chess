@@ -40,8 +40,16 @@ Square Move::get_to() {
     return (U32)((data >> 0) & 0b111111);
 }
 
-U32 Move::get_raw() {
+U32& Move::get_raw() {
     return data;
+}
+
+U32 Move::get_masked() {
+    return data & Move::MOVE_MASK;
+}
+
+U32 Move::get_reversable() {
+    return (data >> 20) & 0b1;
 }
 
 U64 Move::get_from_bit() {
@@ -61,6 +69,10 @@ bool Move::operator>(const Move& m) {
 }
 
 std::string Move::to_string() {
-    return square_num_to_string((int)get_from())
-         + square_num_to_string((int)get_to());
+    std::string base = square_num_to_string((int)get_from())
+                     + square_num_to_string((int)get_to());
+    if ((int)this->get_flag() >= (int)Flag::KNIGHT_PROMO) {
+        base += promo_flag_to_char(this->get_flag());
+    }
+    return base;
 }

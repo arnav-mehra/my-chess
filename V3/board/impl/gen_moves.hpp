@@ -130,15 +130,13 @@ void Board::gen_piece_moves(MoveList &moves, U64 filter) {
 
 template<class Color, class Castle>
 void Board::gen_castle(MoveList& moves, Context& ctx) {    
-    bool has_right          = ctx.has_castling_rights<Castle>();
-    bool is_clear           = (Castle::EMPTY_MASK & this->get_occ()) == 0ULL;
-    bool rook_exists        = (this->get_bitboard(Color::ROOK) & (1ULL << Castle::ROOK_PRE)) != 0ULL;
-    bool no_knight_attacks  = (Castle::KNIGHT_RISKS & this->get_bitboard(Color::OPP_KNIGHT)) == 0ULL;
-    bool no_pawn_attacks    = (Castle::PAWN_RISKS   & this->get_bitboard(Color::OPP_PAWN)  ) == 0ULL;
-    bool no_sliding_attacks = sliding_castle_checks<Color, Castle>() == 0ULL;
+    bool rook_exists = (this->get_bitboard(Color::ROOK) & (1ULL << Castle::ROOK_PRE)) != 0ULL;
 
-    bool can_castle = is_clear & has_right & rook_exists
-                    & no_knight_attacks & no_pawn_attacks & no_sliding_attacks;
+    U64 moved    = ctx.moved_castling_pieces<Castle>();
+    U64 blockers = Castle::EMPTY_MASK & this->get_occ();
+    U64 checks   = castling_checks<Color, Castle>();
+    
+    bool can_castle = ((blockers | checks | moved) == 0ULL) & rook_exists;
     moves.add_castle<Castle>(can_castle);
 }
 
@@ -165,4 +163,27 @@ void Board::gen_moves(MoveList& moves, Context& ctx) {
             this->gen_castle<Color, typename Color::OOO>(moves, ctx);
         }
     }
+}
+
+template<class Color, Gen Gn>
+void Board::gen_moves(
+    MoveList& ml,
+    Context& ctx,
+    U16 depth
+) {
+    this->gen_moves<Color, Gn>(ml, ctx);
+    ml.fill_moves<Color>(this, depth, Move());
+    ml.sort();
+}
+
+template<class Color, Gen Gn>
+void Board::gen_moves(
+    MoveList& ml,
+    Context& ctx,
+    Move& priority_move,
+    U16 depth
+) {
+    this->gen_moves<Color, Gn>(ml, ctx);
+    ml.fill_moves<Color>(this, depth, priority_move);
+    ml.sort();
 }

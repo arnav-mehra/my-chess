@@ -20,10 +20,14 @@ public:
     template<class Color>
     void add_promos(Square from, Square to);
 
-    void fill_moves(void* b, U16 depth);
+    template<class Color>
+    void fill_moves(
+        void* b,
+        U16 depth = 0,
+        Move priority = Move()
+    );
 
     void sort();
-    void prioritize(Move& m);
 
     void print();
 };

@@ -15,7 +15,7 @@ void failure(std::string name) {
 void assert(std::string name, bool condition) {
     if (!condition) {
         failure("ASSERT FAILED: " + name + ".");
-        std::abort();
+        exit(1);
     }
 }
 
@@ -23,6 +23,6 @@ void assert(std::function<void(void)> fn, bool condition) {
     if (!condition) {
         failure("ASSERT FAILED.");
         fn();
-        std::abort();
+        exit(1);
     }
 }

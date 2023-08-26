@@ -5,7 +5,7 @@
 #include "../../util/conversion.hpp"
 
 template<class Color, class Castle>
-U64 Board::sliding_castle_checks() {
+U64 Board::castling_checks() {
     U64 occ_wo_king = this->get_occ() & ~this->bitboards[(int)Color::KING];
 
     U64 rook_risks = 0ULL, bishop_risks = 0ULL;
@@ -15,10 +15,16 @@ U64 Board::sliding_castle_checks() {
     }
     U64 queen_risks = rook_risks | bishop_risks;
 
-    U64 bishop_attackers = bishop_risks & this->bitboards[Color::OPP_BISHOP];
-    U64 rook_attackers   = rook_risks   & this->bitboards[Color::OPP_ROOK];
-    U64 queen_attackers  = queen_risks  & this->bitboards[Color::OPP_QUEEN];
-    return bishop_attackers | rook_attackers | queen_attackers;
+    U64 pawn_attacks   = Castle::PAWN_RISKS   & this->get_bitboard(Color::OPP_PAWN);
+    U64 knight_attacks = Castle::KNIGHT_RISKS & this->get_bitboard(Color::OPP_KNIGHT);
+    U64 king_attacks   = Castle::KING_RISKS   & this->get_bitboard(Color::OPP_KING);
+
+    U64 bishop_attackers = bishop_risks & this->get_bitboard(Color::OPP_BISHOP);
+    U64 rook_attackers   = rook_risks   & this->get_bitboard(Color::OPP_ROOK);
+    U64 queen_attackers  = queen_risks  & this->get_bitboard(Color::OPP_QUEEN);
+    
+    return pawn_attacks | knight_attacks | king_attacks
+         | bishop_attackers | rook_attackers | queen_attackers;
 }
 
 template<class Color>
@@ -32,15 +38,17 @@ U64 Board::get_checks() {
     U64 rook_risks   = KMAGICS::get_r_attacks(sq, occ);
     U64 bishop_risks = KMAGICS::get_b_attacks(sq, occ);
     U64 queen_risks  = rook_risks | bishop_risks;
+    U64 king_risks   = MAPPED_MOVES::get_k_attacks(sq);
 
     U64 pawn_attackers   = pawn_risks   & this->bitboards[Color::OPP_PAWN];
     U64 knight_attackers = knight_risks & this->bitboards[Color::OPP_KNIGHT];
     U64 bishop_attackers = bishop_risks & this->bitboards[Color::OPP_BISHOP];
     U64 rook_attackers   = rook_risks   & this->bitboards[Color::OPP_ROOK];
     U64 queen_attackers  = queen_risks  & this->bitboards[Color::OPP_QUEEN];
-    
+    U64 king_attackers   = king_risks   & this->bitboards[Color::OPP_KING];
+
     return bishop_attackers | rook_attackers | queen_attackers
-         | knight_attackers | pawn_attackers;
+         | knight_attackers | pawn_attackers | king_attackers;
 }
 
 template<class Color>

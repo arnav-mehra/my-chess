@@ -3,8 +3,10 @@
 #include "../Board.hpp"
 #include "../../util/conversion.hpp"
 #include "../../util/assertion.hpp"
-#include "../../search/search.hpp"
+#include "../../search/impl/index.hpp"
+#include "../../search/DrawTable.hpp"
 #include "context.hpp"
+
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -15,6 +17,8 @@
 #define MAX_FEN_EN_PASSANT_LENGTH 2
 
 Context Board::from_fen(std::string fen_str, bool& turn) {
+    TranspositionTable::clear_dep_cells();
+
     if (fen_str.compare("startpos") == 0) {
         fen_str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     }
@@ -102,6 +106,10 @@ Context Board::from_fen(std::string fen_str, bool& turn) {
         ctx.en_passant = string_to_square_num(en_passant[0], en_passant[1]);
     }
 
+    // clear/reset draw table with new context
+
+    DrawTable::clear(ctx);
+
     return ctx;
 }
 
@@ -139,90 +147,178 @@ Flag Board::derive_flag(Square from, Square to) {
     return Flag::REGULAR;
 }
 
+void play_moves(
+    std::string moves,
+    Board& b,
+    Context& ctx,
+    bool& turn
+) {
+    while (true) {
+        size_t i = moves.find(' ');
+        std::string s = moves.substr(
+            0, i == std::string::npos ? moves.size() : i
+        );
+
+        MoveList ml = MoveList();
+        if (turn) b.gen_moves<White, Gen::PSEUDOS>(ml, ctx);
+             else b.gen_moves<Black, Gen::PSEUDOS>(ml, ctx);
+        if (turn) ml.fill_moves<White>(&b);
+             else ml.fill_moves<Black>(&b);
+
+        U8 from = string_to_square_num(s[0], s[1]);
+        U8 to   = string_to_square_num(s[2], s[3]);
+        
+        Move move;
+        for (int i = 0; i < ml.size(); i++) {
+            if (ml[i].get_from() == from && ml[i].get_to() == to) {
+                if (s.size() == 5) { // if promo
+                    if (ml[i].get_flag() == char_to_promo_flag(s[4])) {
+                        move = ml[i];
+                        break;
+                    }
+                } else { // if not promo
+                    move = ml[i];
+                    break;
+                }
+            }
+        }
+        if (move.get_raw() == 0) {
+            std::cout << "invalid move: " << s << " - " << (int)from << ' ' << (int)to << '\n';
+            ml.print();
+            exit(1);
+        }
+
+        if (turn) ctx = b.do_move<White>(move, ctx);
+             else ctx = b.do_move<Black>(move, ctx);
+        turn = !turn;
+        b.assert_board_consistency();
+
+        if (i == std::string::npos) break;
+        moves = moves.substr(i + 1);
+    }
+}
+
+void play_best_move(
+    Board& b,
+    Context& ctx,
+    bool& turn,
+    Move& best_move
+) {
+    std::cout << "bestmove " << best_move.to_string() << "\n";
+    if (turn) ctx = b.do_move<White>(best_move, ctx);
+         else ctx = b.do_move<Black>(best_move, ctx);
+    turn = !turn;
+}
+
 void CLI() {
     Board b;
-    bool turn = true;
     Context ctx;
+    bool turn = true;
     Move best_move;
 
     while (true) {
         std::string s; std::cin >> s;
 
         if (s.compare("uci") == 0) {
+            std::cout << "id name " << "MyChess" << "\n";
+            std::cout << "id author " << "Arnav" << "\n";
             std::cout << "uciok\n";
             continue;
+        }
+        if (s.compare("debug") == 0) {
+            std::string ln; std::getline(std::cin, ln); // eat args
+            continue; // NOT HANDLED/IGNOREABLE
         }
         if (s.compare("isready") == 0) {
             std::cout << "readyok\n";
             continue;
         }
+        if (s.compare("setoption") == 0) {
+            std::string ln; std::getline(std::cin, ln); // eat args
+            continue; // NOT HANDLED
+        }
+        if (s.compare("register") == 0) {
+            std::string ln; std::getline(std::cin, ln); // eat args
+            continue; // NOT HANDLED
+        }
         if (s.compare("ucinewgame") == 0) {
-            std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-            ctx = b.from_fen(fen, turn);
-            continue;
+            ctx = b.from_fen("startpos", turn);
+            continue; // NOT HANDLED/IGNOREABLE
         }
-
-        if (s.compare("fen") == 0) {
-            std::string ln;
-            std::getline(std::cin, ln);
-            ln = ln.substr(1);
-
+        if (s.compare("position") == 0) {
+            std::string pos; std::cin >> pos;
+            std::string ln; std::getline(std::cin, ln);
             size_t i = ln.find("moves");
-            if (i == std::string::npos) {
-                ctx = b.from_fen(ln, turn);
-                continue;
+
+            if (pos.compare("startpos") == 0) {
+                ctx = b.from_fen(pos, turn);
+            }
+            else if (pos.compare("fen") == 0) {
+                std::string fen = ln;
+                if (i != std::string::npos) {
+                    fen = ln.substr(0, i - 1);
+                }
+                ctx = b.from_fen(fen, turn);
+            }
+            else {
+                std::cout << "invalid position arg";
+                exit(1);
             }
 
-            std::string fen = ln.substr(0, i - 1);
-            ctx = b.from_fen(fen, turn);
-            b.print();
-
-            std::string moves = ln.substr(i + 6);
-            while (true) {
-                std::string s = moves.substr(0, 4);
-
-                MoveList ml = MoveList();
-                if (turn) b.gen_moves<White, Gen::PSEUDOS>(ml, ctx);
-                     else b.gen_moves<Black, Gen::PSEUDOS>(ml, ctx);
-                
-                U8 from = string_to_square_num(s[0], s[1]);
-                U8 to   = string_to_square_num(s[2], s[3]);
-
-                Move move = Move(0);
-                for (int i = 0; i < ml.size(); i++) {
-                    if (ml[i].get_from() == from && ml[i].get_to() == to) {
-                        move = ml[i];
-                        break;
-                    }
-                }
-                if (move.get_raw() == 0) {
-                    std::cout << "invalid move";
-                    exit(1);
-                }
-
-                if (turn) b.do_move<White>(move, ctx);
-                     else b.do_move<Black>(move, ctx);
-                turn = !turn;
-
-                if (moves.size() <= 5) break;
-                moves = moves.substr(5);
+            if (i != std::string::npos) {
+                std::string moves = ln.substr(i + 6);
+                play_moves(moves, b, ctx, turn);
             }
-            b.print();
-
             continue;
         }
-
-        if (s.substr(0, 2).compare("go") == 0) {
-            auto [ eval, move ] = turn ? Search::search<White>(b, ctx, 8)
-                                       : Search::search<Black>(b, ctx, 8);
+        if (s.compare("go") == 0) {
+            std::string type; std::cin >> type;
+            std::string ln; std::getline(std::cin, ln); // eat args
+            
+            auto [ move, score ] = turn ? Search::search<White>(b, ctx, 20)
+                                        : Search::search<Black>(b, ctx, 20);
             best_move = move;
-            continue;
+
+            if (type.compare("infinite") == 0) {
+                continue; // wait for stop cmd
+            }
+            else {
+                play_best_move(b, ctx, turn, best_move);
+            }
         }
         if (s.compare("stop") == 0) {
-            std::cout << "bestmove " << best_move.to_string() << "\n";
-            if (turn) b.do_move<White>(best_move, ctx);
-                 else b.do_move<Black>(best_move, ctx);
-            turn = !turn;
+            play_best_move(b, ctx, turn, best_move);
+            continue;
+        }
+        if (s.compare("ponderhit") == 0) {
+            continue; // NOT HANDLED
+        }
+        if (s.compare("quit") == 0) {
+            exit(0);
+        }
+        if (s.compare("print") == 0) {
+            std::string type; std::cin >> type;
+            if (type.compare("board") == 0) {
+                b.print();
+            }
+            if (type.compare("turn") == 0) {
+                std::cout << turn << '\n';
+            }
+            if (type.compare("ctx") == 0) {
+                ctx.print();
+            }
+            if (type.compare("movelist") == 0) {
+                MoveList ml;
+                if (turn) b.gen_moves<White, Gen::PSEUDOS>(ml, ctx);
+                     else b.gen_moves<Black, Gen::PSEUDOS>(ml, ctx);
+                if (turn) ml.fill_moves<White>(&b);
+                     else ml.fill_moves<Black>(&b);
+                
+                ml.print();
+            }
+            if (type.compare("drawtable") == 0) {
+                DrawTable::print();
+            }
             continue;
         }
     }

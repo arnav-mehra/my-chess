@@ -24,6 +24,26 @@ Piece char_to_piece(char pc) {
     return Piece::NA;
 }
 
+Flag char_to_promo_flag(char pc) {
+    switch (pc) {
+        case 'n': return Flag::KNIGHT_PROMO;
+        case 'b': return Flag::BISHOP_PROMO;
+        case 'r': return Flag::ROOK_PROMO;
+        case 'q': return Flag::QUEEN_PROMO;
+    }
+    return Flag::REGULAR;
+}
+
+char promo_flag_to_char(Flag flag) {
+    switch (flag) {
+        case Flag::KNIGHT_PROMO: return 'n';
+        case Flag::BISHOP_PROMO: return 'b';
+        case Flag::ROOK_PROMO:   return 'r';
+        case Flag::QUEEN_PROMO:  return 'q';
+    }
+    return ' ';
+}
+
 char piece_to_char(Piece pc) {
     switch (pc) {
         case Piece::WHITE_PAWN:   return 'P';

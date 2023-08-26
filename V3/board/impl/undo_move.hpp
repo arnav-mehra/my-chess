@@ -2,6 +2,7 @@
 
 #include "../Board.hpp"
 #include "../../move/MoveList.hpp"
+#include "../../search/DrawTable.hpp"
 
 template<class Color>
 void inline Board::undo_regular(Piece pc, Piece capt, Square from, Square to) {
@@ -77,4 +78,6 @@ void Board::undo_move(Move& m) {
     else {
         this->undo_promo<Color>(fg, capt, from, to);
     }
+
+    DrawTable::pop_position();
 }

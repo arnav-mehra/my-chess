@@ -10,8 +10,6 @@
 
 namespace Perft {
     struct Stats {
-        MoveList ml[10];
-
         int flag_hist[14] = {};
         int move_hist[64 * 64 * 8] = {};
         int checks = 0;
@@ -21,7 +19,7 @@ namespace Perft {
         void add_move(Move m, int res) {
             int sq = (m.get_raw() >> 4) & 0b111111111111;
             if (m.get_flag() >= Flag::KNIGHT_PROMO) {
-                int promo_pc = (((int)m.get_flag() - 6) % 4) + 1;
+                int promo_pc = (int)m.get_flag() - 2;
                 sq |= promo_pc << 12;
             }
             this->move_hist[sq] += res;
@@ -97,24 +95,26 @@ namespace Perft {
             return 1;
         }
 
-        MoveList ml = stats.ml[depth];
-        ml.clear(); b.gen_moves<Color, Gen::PSEUDOS>(ml, ctx);
+        MoveList ml;
+        Move p = Move();
+        b.gen_moves<Color, Gen::PSEUDOS>(ml, ctx, p, 0);
 
         U64 cnt = 0;
         for (int i = 0; i < ml.size(); i++) {
             Context new_ctx = ctx;
             b.do_move<Color>(ml[i], new_ctx);
+            
             if (b.get_checks<Color>() == 0ULL) { // filter out illegal moves
-                // stats.flag_hist[(int)ml[i].get_flag()]++;
-                int res = turn ? _run<Black>(b, new_ctx, depth - 1, stats)
+                U64 res = turn ? _run<Black>(b, new_ctx, depth - 1, stats)
                                : _run<White>(b, new_ctx, depth - 1, stats);
                 if (depth == stats.init_depth) stats.add_move(ml[i], res);
                 cnt += res;
             }
+
             b.undo_move<Color>(ml[i]);
         }
 
-        stats.checkmates += cnt == 0; // no legal moves == checkmate.
+        // stats.checkmates += cnt == 0; // no legal moves == checkmate.
         return cnt;
     }
 
@@ -134,7 +134,7 @@ namespace Perft {
         std::chrono::duration<double> t_sec = end - start;
         // std::cout << "PERFT " << depth << ": " << res << "\n\n";
         std::cout << t_sec.count() << " s\n";
-        std::cout << (res / t_sec.count()) << " n/s\n\n";
+        std::cout << (res / t_sec.count()) << " n/s\n";
 
         // std::cout << "CHECKS: " << stats.checks << '\n'; 
         // std::cout << "CHECKMATE: " << stats.checkmates << "\n\n";
@@ -144,6 +144,6 @@ namespace Perft {
 
         print_hist_output(stats, solution_hist, CMP_TO_SOLUTION);
 
-        std::cout << "\nNodes searched: " << res << '\n';    
+        std::cout << "Nodes searched: " << res << '\n';    
     }
 };

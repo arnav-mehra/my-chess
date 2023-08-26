@@ -8,8 +8,6 @@ struct Context {
     Square en_passant;
 
     Context();
-    Context(Context&);
-    Context(const Context&);
     Context(void* b_ptr, bool turn, bool castling_rights[4]);
 
     void toggle_hash_turn();
@@ -18,5 +16,12 @@ struct Context {
 
     template<class Color> void set_en_passant(Piece, Square from, Square to);
 
-    template<class Castle> bool has_castling_rights();
+    template<class Castle> U64 moved_castling_pieces();
+
+    void print() {
+        std::cout << "moved:\n";
+        printBB(moved);
+        std::cout << "hash: " << std::hex << hash << '\n';
+        std::cout << "en_passant: " << std::hex << en_passant << '\n';
+    }
 };

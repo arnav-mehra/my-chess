@@ -54,12 +54,14 @@ public:
 
     // gen_moves.hpp
 
-    template<class Color, Gen Gn> void gen_moves(MoveList&, Context&);
+    template<class Color, Gen> void gen_moves(MoveList&, Context&);
+    template<class Color, Gen> void gen_moves(MoveList&, Context&, U16 depth);
+    template<class Color, Gen> void gen_moves(MoveList&, Context&, Move&, U16 depth);
 
     // do_move.hpp && undo_move.hpp
 
-    template<class> void do_move(Move&, Context&);
-    template<class> void undo_move(Move&);
+    template<class Color> Context do_move(Move&, Context&);
+    template<class Color> void undo_move(Move&);
 
     // other.hpp
 
@@ -73,7 +75,7 @@ private:
     template<class, Piece> U64  gen_piece_attacks(Square from_sq);
     template<class, Piece> void _gen_piece_moves(MoveList&, U64 filter, Square from_sq);
     template<class, Piece> void gen_piece_moves(MoveList&, U64 filter);
-    template<class, class> U64  sliding_castle_checks();
+    template<class, class> U64 castling_checks();
     template<class, class> void gen_castle(MoveList&, Context&);
 
     // do_move.hpp
