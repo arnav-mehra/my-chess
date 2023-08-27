@@ -42,16 +42,12 @@ int main(int argc, char** argv) {
         }
     });
 
-    float bf = (Search::nodes + 0.0) / (Search::nodes - Search::leaves + 0.0);
     U64 num = 0, den = 0;
-    for (int i = 0; i <= depth; i++) {
+    for (int i = 1; i <= depth; i++) {
         if (i != depth) num += Search::node_depth_hist[i];
-        if (i != 0) den += Search::node_depth_hist[i];
+        if (i != 1) den += Search::node_depth_hist[i];
     }
-    std::cout << "\nnodes:\t"  << Search::nodes
-              << "\nleaves:\t" << Search::leaves
-              << "\nbf:\t" << (num + 0.0) / (den + 0.0)
-              << "\nbf:\t" << bf
+    std::cout << "\nbf:\t" << (num + 0.0) / (den + 0.0)
               << "\n";
 
     std::cout << "\nkiller hits:\t"   << KillerTable::hits

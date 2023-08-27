@@ -17,8 +17,6 @@ namespace Search {
 
     // stats
 
-    U64 leaves = 0;
-    U64 nodes = 0;
     U64 node_depth_hist[MAX_DEPTH] = {};
 
     // search

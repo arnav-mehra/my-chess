@@ -13,18 +13,15 @@ MoveScore Search::nega_max(
 ) {
     constexpr bool turn = std::is_same<Color, White>::value;
     const I16 og_alpha = alpha;
-    nodes++;
     node_depth_hist[depth]++;
 
     if (DrawTable::is_draw()) {
-        leaves++;
         return { Move(), 0 };
     }
 
     // Quiescence: at nega_max leaf.
 
     if (depth == 0) {
-        leaves++;
         I16 score = quiesce<Color>(b, ctx, alpha, beta);
         return { Move(), score };
     }
@@ -35,7 +32,6 @@ MoveScore Search::nega_max(
     if (tt_hit & (tt_cell->get_depth() >= depth)) {
         switch (tt_cell->node_type) {
             case TranspositionTable::NodeType::EXACT: {
-                leaves++;
                 return { tt_cell->move, tt_cell->score };
             }
             case TranspositionTable::NodeType::LOWER: alpha = std::max(alpha, tt_cell->score);
@@ -43,7 +39,6 @@ MoveScore Search::nega_max(
         }
         if (alpha >= beta) {
             KillerTable::add_move(turn, tt_cell->move, depth);
-            leaves++;
             return { tt_cell->move, tt_cell->score };
         }
     }
@@ -76,7 +71,6 @@ MoveScore Search::nega_max(
         new_ctx.toggle_hash_turn();
 
         if (null_best.score >= beta) {
-            leaves++;
             return { Move(), beta }; // eval after not moving
         }
     }
@@ -125,7 +119,6 @@ MoveScore Search::nega_max(
     // Checkmate or Stalemate.
 
     if (legal_move_count == 0) {
-        leaves++;
         I16 score = b.get_checks<Color>() ? -INFINITY : 0;
         return { Move(), score };
     }
@@ -151,10 +144,8 @@ MoveScore Search::nega_scout(
     constexpr bool turn = std::is_same<Color, White>::value;
     I16 og_alpha = alpha;
     I16 og_beta = beta;
-    nodes++;
 
     if (DrawTable::is_draw()) {
-        leaves++;
         return { Move(), 0 };
     }
 
@@ -174,7 +165,6 @@ MoveScore Search::nega_scout(
     // Quiescence: at nega_max leaf.
 
     if (depth == 0) {
-        leaves++;
         I16 score = quiesce<Color>(b, ctx, alpha, beta);
         return { Move(), score };
     }
@@ -229,7 +219,6 @@ MoveScore Search::nega_scout(
     // Checkmate or Stalemate.
 
     if (legal_move_count == 0) {
-        leaves++;
         I16 score = b.get_checks<Color>() ? -INFINITY : 0;
         best = { Move(), score };
     }
