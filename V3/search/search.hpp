@@ -18,6 +18,8 @@ namespace Search {
     // stats
 
     U64 node_depth_hist[MAX_DEPTH] = {};
+    U64 quiesce_nodes = 0;
+    U64 negamax_nodes = 0;
 
     // search
 

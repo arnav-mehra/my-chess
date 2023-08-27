@@ -14,6 +14,7 @@ MoveScore Search::nega_max(
     constexpr bool turn = std::is_same<Color, White>::value;
     const I16 og_alpha = alpha;
     node_depth_hist[depth]++;
+    negamax_nodes++;
 
     if (DrawTable::is_draw()) {
         return { Move(), 0 };
@@ -78,7 +79,7 @@ MoveScore Search::nega_max(
     // Tests Moves.
 
     MoveList ml;
-    b.gen_order_moves<Color, Gen::PSEUDOS>(ml, ctx, priority_move, depth);
+    b.gen_order_moves<Color, GenType::PSEUDOS>(ml, ctx, priority_move, depth);
 
     MoveScore best = { Move(), -INFINITY };
     I16 legal_move_count = 0;
@@ -172,7 +173,7 @@ MoveScore Search::nega_scout(
     // Tests Moves.
 
     MoveList ml;
-    b.gen_moves<Color, Gen::PSEUDOS>(ml, ctx, priority_move, depth);
+    b.gen_moves<Color, GenType::PSEUDOS>(ml, ctx, priority_move, depth);
 
     MoveScore best = { Move(), -INFINITY };
     I16 legal_move_count = 0;

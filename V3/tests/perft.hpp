@@ -96,18 +96,17 @@ namespace Perft {
         }
 
         MoveList ml;
-        Move p = Move();
-        b.gen_moves<Color, Gen::PSEUDOS>(ml, ctx, p, 0);
+        b.gen_moves<Color, GenType::PSEUDOS>(ml, ctx);
+        ml.fill_moves<Color, GenType::PSEUDOS>(&b);
 
         U64 cnt = 0;
         for (int i = 0; i < ml.size(); i++) {
-            Context new_ctx = ctx;
-            b.do_move<Color>(ml[i], new_ctx);
-            
+            Context new_ctx = b.do_move<Color>(ml[i], ctx);
+
             if (b.get_checks<Color>() == 0ULL) { // filter out illegal moves
                 U64 res = turn ? _run<Black>(b, new_ctx, depth - 1, stats)
                                : _run<White>(b, new_ctx, depth - 1, stats);
-                if (depth == stats.init_depth) stats.add_move(ml[i], res);
+                // if (depth == stats.init_depth) stats.add_move(ml[i], res);
                 cnt += res;
             }
 

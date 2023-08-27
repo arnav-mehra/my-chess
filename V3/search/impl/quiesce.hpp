@@ -10,6 +10,7 @@ I16 Search::quiesce(
     I16 beta
 ) {
     constexpr bool turn = std::is_same<Color, White>::value;
+    quiesce_nodes++;
 
     I16 eval = (I16)(turn ? 1 : -1) * Evaluate::pestos(b);
     
@@ -17,7 +18,7 @@ I16 Search::quiesce(
     alpha = std::max(alpha, eval);
 
     MoveList ml;
-    b.gen_order_moves<Color, Gen::CAPTURES>(ml, ctx);
+    b.gen_order_moves<Color, GenType::CAPTURES>(ml, ctx);
     if (ml.size() == 0) return eval;
 
     for (int i = 0; i < ml.size(); i++) {

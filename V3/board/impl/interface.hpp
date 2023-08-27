@@ -161,8 +161,8 @@ void play_moves(
         );
 
         MoveList ml = MoveList();
-        if (turn) b.gen_order_moves<White, Gen::PSEUDOS>(ml, ctx);
-             else b.gen_order_moves<Black, Gen::PSEUDOS>(ml, ctx);
+        if (turn) b.gen_order_moves<White, GenType::PSEUDOS>(ml, ctx);
+             else b.gen_order_moves<Black, GenType::PSEUDOS>(ml, ctx);
 
         U8 from = string_to_square_num(s[0], s[1]);
         U8 to   = string_to_square_num(s[2], s[3]);
@@ -308,8 +308,8 @@ void CLI() {
             }
             if (type.compare("movelist") == 0) {
                 MoveList ml;
-                if (turn) b.gen_order_moves<White, Gen::PSEUDOS>(ml, ctx);
-                     else b.gen_order_moves<Black, Gen::PSEUDOS>(ml, ctx);
+                if (turn) b.gen_order_moves<White, GenType::PSEUDOS>(ml, ctx);
+                     else b.gen_order_moves<Black, GenType::PSEUDOS>(ml, ctx);
                 
                 ml.print();
             }

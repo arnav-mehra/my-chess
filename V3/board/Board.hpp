@@ -54,8 +54,8 @@ public:
 
     // gen_moves.hpp
 
-    template<class Color, Gen> void gen_moves(MoveList&, Context&);
-    template<class Color, Gen> void gen_order_moves(
+    template<class Color, GenType> void gen_moves(MoveList&, Context&);
+    template<class Color, GenType> void gen_order_moves(
         MoveList&,
         Context&,
         Move = Move(),
@@ -75,12 +75,12 @@ private:
 
     // gen_moves.hpp
 
-    template<class, Gen>   void gen_pawn_moves(MoveList&, Context&, U64 filter);
+    template<class, GenType>   void gen_pawn_moves(MoveList&, Context&, U64 filter);
     template<class, Piece> U64  gen_piece_attacks(Square from_sq);
     template<class, Piece> void _gen_piece_moves(MoveList&, U64 filter, Square from_sq);
     template<class, Piece> void gen_piece_moves(MoveList&, U64 filter);
-    template<class, class> U64 castling_checks();
-    template<class, class> void gen_castle(MoveList&, Context&);
+    template<class Color, class Castle> U64 castling_checks();
+    template<class Color, class Castle> void gen_castle(MoveList&, Context&);
 
     // do_move.hpp
 
@@ -95,19 +95,19 @@ private:
 
     template<class Color>  void do_regular   (Context& ctx, Piece pc, Piece capt, Square from, Square to);
     template<class Color>  void do_en_passant(Context&, Square from, Square to);
-    template<class, class> void do_castle    (Context&);
     template<class Color>  void do_promo     (Context& ctx, Flag flag, Piece capt, Square from, Square to);
+    template<class Color, class Castle> void do_castle(Context&);
 
     // undo_move.hpp
 
-    template<class Color>  void undo_regular   (Piece pc, Piece capt, Square from, Square to);
-    template<class>        void undo_en_passant(Square from, Square to);
-    template<class, class> void undo_castle    ();
-    template<class>        void undo_promo     (Flag, Piece capt, Square from, Square to);
+    template<class Color> void undo_regular   (Piece pc, Piece capt, Square from, Square to);
+    template<class Color> void undo_en_passant(Square from, Square to);
+    template<class Color> void undo_promo     (Flag, Piece capt, Square from, Square to);
+    template<class Color, class Castle> void undo_castle();
 
     // other.hpp
 
-    template<class> U64 get_opp_attacks();
-    template<class> U64 get_check_blocks(U64 checks);
-    template<class> U64 get_pins();
+    template<class Color> U64 get_opp_attacks();
+    template<class Color> U64 get_check_blocks(U64 checks);
+    template<class Color> U64 get_pins();
 };

@@ -113,16 +113,16 @@ U32 Move::get_quiet_score(Piece pc, Flag flag, Square from, Square to, U16 depth
     );
 }
 
-template<class Color, Gen Gn>
+template<class Color, GenType Gn>
 void Move::set_score_capt(void* b_ptr, Move& priority, U16 depth) { 
     Board& b = *((Board*) b_ptr);
 
     Square from = this->get_from();
-    Square to = this->get_to();
-    Piece pc   = b.get_board(from);
-    Flag  flag = this->get_flag();
-    Piece capt = flag == Flag::EN_PASSANT ? (Piece)Color::OPP_PAWN
-                                          : b.get_board(to);
+    Square to   = this->get_to();
+    Flag   flag = this->get_flag();
+    Piece  pc   = b.get_board(from);
+    Piece  capt = flag == Flag::EN_PASSANT ? (Piece)Color::OPP_PAWN
+                                           : b.get_board(to);
 
     // set capture
 
@@ -130,7 +130,7 @@ void Move::set_score_capt(void* b_ptr, Move& priority, U16 depth) {
 
     // set reversability (for 3-fold repetition or 50-move rule)
 
-    if constexpr (Gn != Gen::CAPTURES) {
+    if constexpr (Gn != GenType::CAPTURES) {
         U32 is_reversable = (
             (flag == Flag::CASTLE) // castles are reversable (artifically)
             | (
@@ -144,7 +144,7 @@ void Move::set_score_capt(void* b_ptr, Move& priority, U16 depth) {
 
     // set score
 
-    if constexpr (Gn == Gen::CAPTURES) {
+    if constexpr (Gn == GenType::CAPTURES) {
         U32 score = this->get_capture_score(pc, capt, flag, depth, priority);
         this->data |= score << 21;
     } else {
@@ -153,10 +153,9 @@ void Move::set_score_capt(void* b_ptr, Move& priority, U16 depth) {
             : this->get_capture_score(pc, capt, flag, depth, priority);
         this->data |= score << 21;
     }
-    // U32 score = v[b.get_board(from)]
 }
 
-template<class Color, Gen Gn>
+template<class Color, GenType Gn>
 void MoveList::fill_moves(
     void* b,
     U16 depth,

@@ -7,18 +7,18 @@
 
 // PAWNS: singles, doubles, promos, captures, promo-captures
 
-template<class Color, Gen Gn>
+template<class Color, GenType Gn>
 void Board::gen_pawn_moves(MoveList &moves, Context& ctx, U64 filter) {
-    if (Gn == Gen::PSEUDOS) {
-        gen_pawn_moves<Color, Gen::CAPTURES>(moves, ctx, this->get_bitboard(Color::OPP_ALL));
-        gen_pawn_moves<Color, Gen::QUIETS  >(moves, ctx, this->get_unocc());
+    if (Gn == GenType::PSEUDOS) {
+        gen_pawn_moves<Color, GenType::CAPTURES>(moves, ctx, this->get_bitboard(Color::OPP_ALL));
+        gen_pawn_moves<Color, GenType::QUIETS  >(moves, ctx, this->get_unocc());
         return;
     }
 
     U64 promo_pawns = this->bitboards[Color::PAWN] & Color::PAWN_FINAL_RANK;
     U64 reg_pawns   = this->bitboards[Color::PAWN] & ~Color::PAWN_FINAL_RANK;
 
-    if constexpr (Gn == Gen::QUIETS || Gn == Gen::BLOCKS) {
+    if constexpr (Gn == GenType::QUIETS || Gn == GenType::BLOCKS) {
         U64 singles = shift<Color::FORWARD>(reg_pawns)   & filter;
         U64 doubles = shift<Color::FORWARD>(singles)     & filter & Color::PAWN_DOUBLE_RANK; 
         U64 promos  = shift<Color::FORWARD>(promo_pawns) & filter;
@@ -40,7 +40,7 @@ void Board::gen_pawn_moves(MoveList &moves, Context& ctx, U64 filter) {
         }
     }
 
-    if constexpr (Gn == Gen::CAPTURES || Gn == Gen::BLOCKS) {
+    if constexpr (Gn == GenType::CAPTURES || Gn == GenType::BLOCKS) {
         U64 non_left_opp  = filter & NON_LEFT_PIECES;
         U64 non_right_opp = filter & NON_RIGHT_PIECES;
 
@@ -142,11 +142,11 @@ void Board::gen_castle(MoveList& moves, Context& ctx) {
 
 // GENS
 
-template<class Color, Gen Gn>
+template<class Color, GenType Gn>
 void Board::gen_moves(MoveList& moves, Context& ctx) {
-    U64 filter = Gn == Gen::CAPTURES ? this->get_bitboard(Color::OPP_ALL)
-               : Gn == Gen::QUIETS   ? this->get_unocc()
-               : Gn == Gen::PSEUDOS  ? ~this->get_bitboard(Color::ALL)
+    U64 filter = Gn == GenType::CAPTURES ? this->get_bitboard(Color::OPP_ALL)
+               : Gn == GenType::QUIETS   ? this->get_unocc()
+               : Gn == GenType::PSEUDOS  ? ~this->get_bitboard(Color::ALL)
                : 0ULL;
 
     this->gen_pawn_moves <Color, Gn>(moves, ctx, filter);
@@ -157,7 +157,7 @@ void Board::gen_moves(MoveList& moves, Context& ctx) {
     this->gen_piece_moves<Color, (Piece)Color::QUEEN >(moves, filter);
     this->gen_piece_moves<Color, (Piece)Color::KING  >(moves, filter);
 
-    if constexpr (Gn == Gen::QUIETS || Gn == Gen::PSEUDOS) {
+    if constexpr (Gn == GenType::QUIETS || Gn == GenType::PSEUDOS) {
         if (this->get_checks<Color>() == 0ULL) {
             this->gen_castle<Color, typename Color::OO >(moves, ctx);
             this->gen_castle<Color, typename Color::OOO>(moves, ctx);
@@ -165,7 +165,7 @@ void Board::gen_moves(MoveList& moves, Context& ctx) {
     }
 }
 
-template<class Color, Gen Gn>
+template<class Color, GenType Gn>
 void Board::gen_order_moves(
     MoveList& ml,
     Context& ctx,

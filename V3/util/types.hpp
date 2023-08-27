@@ -42,7 +42,7 @@ enum class Flag : Square { // colors tested for
     QUEEN_PROMO  = 6
 };
 
-enum class Gen {
+enum class GenType {
     CAPTURES,
     QUIETS,
     PSEUDOS,
