@@ -112,16 +112,16 @@ void inline Board::do_en_passant(Context& ctx, Square from, Square to) {
 
 template<class Color>
 Context Board::do_move(Move& m, Context& old_ctx) {
-    Context ctx = old_ctx;
-    ctx.en_passant = 0;
-    ctx.toggle_hash_turn();
-    ctx.toggle_castling_rights(m.get_from());
-
     Flag   fg   = m.get_flag();
     Square from = m.get_from();
     Square to   = m.get_to();
     Piece  pc   = this->get_board(from);
     Piece  capt = m.get_capture();
+
+    Context ctx = old_ctx;
+    ctx.en_passant = 0;
+    ctx.toggle_hash_turn();
+    ctx.toggle_castling_rights(from);
 
     if (fg == Flag::REGULAR) {
         this->do_regular<Color>(ctx, pc, capt, from, to);

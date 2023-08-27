@@ -5,17 +5,20 @@
 #include "../KillerTable.hpp"
 
 // ORDERING: (Score = 11 bits)
-//      1. TT-suggestion (PV-node, Hash Move) -> MAX_SCORE
+//      1. TT-suggestion (PV-node, Hash Move) -> MAX_SCORE = 2047
 //      2. Positive Captures and Promos       -> Victim - Aggressor (> 0) + CAPT_SCORE
 //      3. Neutral Captures                   -> Victim - Aggressor (= 0) + CAPT_SCORE
 //      4. Killers                            -> CAPT_SCORE - 1
 //      5. Negative Captures                  -> Victim - Aggressor (< 0) + CAPT_SCORE
-//      6. Quiets                             -> 0
+//      6. Quiets                             -> Min(Hist, QUIET_SCORE)
 
 // Calculating CAPT_SCORE:
-//      MIN(Negative Captures) = 1
-//      So, PC_VALS[PAWN] - PC_VALS[KING] + CAPT_SCORE = 1
-//      CAPT_SCORE = PC_VALS[KING] - PC_VALS[PAWN] + 1
+//      MIN(Negative Captures) = QUIET_SCORE + 1
+//      So, PC_VALS[PAWN] - PC_VALS[KING] + CAPT_SCORE = QUIET_SCORE + 1
+//      CAPT_SCORE = PC_VALS[KING] - PC_VALS[PAWN] + QUIET_SCORE + 1
+
+// QUIET_SCORE
+//      MAX(Hist)? Idk, I'll guess 255.
 
 // PROMO FORMULA:
 //      PROMO_ADJ = CAPTURE_BONUS + PC_VALS[PROMO_PC]
@@ -31,9 +34,12 @@ constexpr U32 FLAG_VALS[7] = {
 
 constexpr U32 MAX_SCORE = (0b1U << 11) - 1U;
 
+constexpr U32 QUIET_SCORE = 255U;
+
 constexpr U32 CAPT_SCORE = (
     PC_VALS[(int)Piece::WHITE_KING]
     - PC_VALS[(int)Piece::WHITE_PAWN]
+    + QUIET_SCORE
     + 1U
 );
 
@@ -73,18 +79,17 @@ U32 Move::get_capture_score(Piece pc, Piece capt, Flag flag, U16 depth, Move& pr
     bool is_capture = not_known;
 
     U32 priority_bonus = MAX_SCORE;
-    U32 quiet_bonus    = 0U;
     U32 capture_bonus  = CAPT_SCORE + PC_VALS[(int)capt] - PC_VALS[(int)pc];
-    U32 promo_bonus    = capture_bonus + FLAG_VALS[(int)flag];
+    U32 promo_bonus    = capture_bonus  + FLAG_VALS[(int)flag] - 100U;
 
     return (
-          (is_priority * priority_bonus)
+        (is_priority * priority_bonus)
         | (is_promo    * promo_bonus)
         | (is_capture  * capture_bonus)
     );
 }
 
-U32 Move::get_quiet_score(Piece pc, Flag flag, U16 depth, Move& priority) {
+U32 Move::get_quiet_score(Piece pc, Flag flag, Square from, Square to, U16 depth, Move& priority) {
     bool not_known = true;
     bool is_priority = (this->get_masked() == priority.get_masked());
     not_known &= !is_priority;
@@ -95,8 +100,9 @@ U32 Move::get_quiet_score(Piece pc, Flag flag, U16 depth, Move& priority) {
     bool is_quiet = not_known;
 
     U32 priority_bonus = MAX_SCORE;
-    U32 killer_bonus   = 1U;
-    U32 quiet_bonus    = 0U;
+    U32 killer_bonus   = CAPT_SCORE - 1U;
+    U32 hist_bonus     = KillerTable::history[pc <= Piece::WHITE_KING][this->get_from()][this->get_to()];
+    U32 quiet_bonus    = std::min(hist_bonus, QUIET_SCORE);
     U32 promo_bonus    = CAPT_SCORE - PC_VALS[(int)Piece::WHITE_PAWN] + FLAG_VALS[(int)flag];
 
     return (
@@ -111,10 +117,12 @@ template<class Color, Gen Gn>
 void Move::set_score_capt(void* b_ptr, Move& priority, U16 depth) { 
     Board& b = *((Board*) b_ptr);
 
-    Piece pc   = b.get_board(this->get_from());
+    Square from = this->get_from();
+    Square to = this->get_to();
+    Piece pc   = b.get_board(from);
     Flag  flag = this->get_flag();
     Piece capt = flag == Flag::EN_PASSANT ? (Piece)Color::OPP_PAWN
-                                          : b.get_board(this->get_to());
+                                          : b.get_board(to);
 
     // set capture
 
@@ -141,10 +149,11 @@ void Move::set_score_capt(void* b_ptr, Move& priority, U16 depth) {
         this->data |= score << 21;
     } else {
         U32 score = capt == Piece::NA
-            ? this->get_quiet_score(pc, flag, depth, priority)
+            ? this->get_quiet_score(pc, flag, from, to, depth, priority)
             : this->get_capture_score(pc, capt, flag, depth, priority);
         this->data |= score << 21;
     }
+    // U32 score = v[b.get_board(from)]
 }
 
 template<class Color, Gen Gn>

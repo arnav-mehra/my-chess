@@ -33,7 +33,7 @@ struct Move {
     template<class Color, Gen Gn> void set_score_capt(void* b, Move& priority, U16 depth);
     U32 get_move_score(Piece pc, Piece capt, Flag flag, U16 depth, Move& priority);
     U32 get_capture_score(Piece pc, Piece capt, Flag flag, U16 depth, Move& priority);
-    U32 get_quiet_score(Piece pc, Flag flag, U16 depth, Move& priority);
+    U32 get_quiet_score(Piece pc, Flag flag, Square from, Square to, U16 depth, Move& priority);
 
     bool operator==(const Move& m);
     bool operator> (const Move& m);

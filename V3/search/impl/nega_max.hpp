@@ -42,7 +42,7 @@ MoveScore Search::nega_max(
             case TranspositionTable::NodeType::UPPER: beta  = std::min(beta,  tt_cell->score);
         }
         if (alpha >= beta) {
-            KillerTable::add_move(tt_cell->move, depth);
+            KillerTable::add_move(turn, tt_cell->move, depth);
             leaves++;
             return { tt_cell->move, tt_cell->score };
         }
@@ -117,7 +117,7 @@ MoveScore Search::nega_max(
         }
         alpha = std::max(alpha, best.score);
         if (alpha >= beta) {
-            KillerTable::add_move(move, depth);
+            KillerTable::add_move(turn, move, depth);
             break;
         }
     }

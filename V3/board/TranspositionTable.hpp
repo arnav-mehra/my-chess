@@ -90,9 +90,10 @@ namespace TranspositionTable {
                         : NodeType::EXACT;
     }
 
-    void clear_dep_cells() {
+    void clear_cells() {
         for (Entry& entry : table) {
             entry.dep_cell.hash_depth = 0ULL;
+            entry.rec_cell.hash_depth = 0ULL;
         }
     }
 };

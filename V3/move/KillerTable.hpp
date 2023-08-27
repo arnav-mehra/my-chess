@@ -16,7 +16,8 @@ namespace KillerTable {
     U64 misses = 0;
     U64 calls = 0;
 
-    U32 table[MAX_DEPTH][SLOTS];
+    U32 killers[MAX_DEPTH][SLOTS] = {};
+    U32 history[2][NUM_SQUARES][NUM_SQUARES] = {};
 
     bool has_move(Move& m, U16 depth) {
         if constexpr (!USE_KILLER_TABLE) return false;
@@ -24,7 +25,7 @@ namespace KillerTable {
         U32 target = m.get_masked();
         bool is_hit = false;
         for (int i = 0; i < SLOTS; i++) {
-            is_hit |= (table[depth][i] == target);
+            is_hit |= (killers[depth][i] == target);
         }
 
         hits += is_hit;
@@ -36,15 +37,31 @@ namespace KillerTable {
         return has_move(m, depth);
     }
 
-    void add_move(Move& m, U16 depth) {
+    void add_move(bool turn, Move& m, U16 depth) {
         if constexpr (!USE_KILLER_TABLE) return;
 
         if (m.get_capture() != Piece::NA) return;
         if (has_move(m, depth)) return;
 
+        history[turn][m.get_from()][m.get_to()] += depth * depth;
+
         for (int i = SLOTS - 1; i >= 1; i--) {
-            table[depth][i] = table[depth][i - 1];
+            killers[depth][i] = killers[depth][i - 1];
         }
-        table[depth][0] = m.get_masked();
+        killers[depth][0] = m.get_masked();
+    }
+
+    void clear_cells() {
+        for (auto& slots : killers) {
+            slots[0] = 0U;
+            slots[1] = 0U;
+        }
+        for (auto& x : history) {
+            for (auto& y : x) {
+                for (auto& z : y) {
+                    z = 0U;
+                }
+            }
+        }
     }
 };

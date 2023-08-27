@@ -17,7 +17,8 @@
 #define MAX_FEN_EN_PASSANT_LENGTH 2
 
 Context Board::from_fen(std::string fen_str, bool& turn) {
-    TranspositionTable::clear_dep_cells();
+    TranspositionTable::clear_cells();
+    KillerTable::clear_cells();
 
     if (fen_str.compare("startpos") == 0) {
         fen_str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
