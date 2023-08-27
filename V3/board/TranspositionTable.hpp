@@ -3,12 +3,6 @@
 #include "../util/types.hpp"
 #include "../move/Move.hpp"
 
-enum NodeType : U8 {
-    EXACT,
-    LOWER,
-    UPPER
-};
-
 struct MoveScore {
     Move move;
     I16 score;
@@ -20,12 +14,23 @@ namespace TranspositionTable {
 
     // Constants
 
-    constexpr size_t IDX_BITS = 19;
+    constexpr size_t IDX_BITS = 20;
     constexpr U64    IDX_MASK = ((1ULL << IDX_BITS) - 1ULL);
     constexpr U64    HV_MASK  = ~IDX_MASK;
     constexpr size_t TT_SIZE  = 1ULL << IDX_BITS;
 
+    // Stats
+
+    U64 hits = 0;
+    U64 misses = 0;
+
     // Data Structures
+
+    enum NodeType : U8 {
+        EXACT,
+        LOWER,
+        UPPER
+    };
 
     struct Cell {
         U64 hash_depth; // [ 45-bit hash | 3-bit gap | 16-bit depth ]
@@ -64,10 +69,12 @@ namespace TranspositionTable {
 
         U64 hash_val = hash >> IDX_BITS;
         // check with depth cell first (optimal accuracy).
+        hits++;
         if (hash_val == dep_cell->get_hash()) return { true, dep_cell };
         // check with recency cell second (optimal hitrate).
         if (hash_val == rec_cell->get_hash()) return { true, rec_cell };
         // complete miss, return replacement cell.
+        hits--; misses++;
         Cell* rep_cell = (min_depth >= dep_cell->get_depth()) ? dep_cell : rec_cell;
         return { false, rep_cell };
     }

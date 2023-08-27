@@ -20,7 +20,7 @@ public:
     template<class Color>
     void add_promos(Square from, Square to);
 
-    template<class Color>
+    template<class Color, Gen Gn>
     void fill_moves(
         void* b,
         U16 depth = 0,

@@ -17,7 +17,7 @@ I16 Search::quiesce(
     alpha = std::max(alpha, eval);
 
     MoveList ml;
-    b.gen_moves<Color, Gen::CAPTURES>(ml, ctx, 0);
+    b.gen_order_moves<Color, Gen::CAPTURES>(ml, ctx);
     if (ml.size() == 0) return eval;
 
     for (int i = 0; i < ml.size(); i++) {

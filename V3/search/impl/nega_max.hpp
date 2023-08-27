@@ -14,40 +14,77 @@ MoveScore Search::nega_max(
     constexpr bool turn = std::is_same<Color, White>::value;
     const I16 og_alpha = alpha;
     nodes++;
+    node_depth_hist[depth]++;
 
     if (DrawTable::is_draw()) {
+        leaves++;
         return { Move(), 0 };
+    }
+
+    // Quiescence: at nega_max leaf.
+
+    if (depth == 0) {
+        leaves++;
+        I16 score = quiesce<Color>(b, ctx, alpha, beta);
+        return { Move(), score };
     }
 
     // TT-lookup: to adjust bounds and get priority move.
 
     auto [ tt_hit, tt_cell ] = TranspositionTable::get_cell(ctx.hash, depth);
-    if (tt_hit && tt_cell->get_depth() >= depth) {
+    if (tt_hit & (tt_cell->get_depth() >= depth)) {
         switch (tt_cell->node_type) {
-            case NodeType::EXACT: {
+            case TranspositionTable::NodeType::EXACT: {
+                leaves++;
                 return { tt_cell->move, tt_cell->score };
             }
-            case NodeType::LOWER: alpha = std::max(alpha, tt_cell->score);
-            case NodeType::UPPER: beta  = std::min(beta,  tt_cell->score);
+            case TranspositionTable::NodeType::LOWER: alpha = std::max(alpha, tt_cell->score);
+            case TranspositionTable::NodeType::UPPER: beta  = std::min(beta,  tt_cell->score);
         }
         if (alpha >= beta) {
-            // KillerTable::add_move(tt_cell->move, depth);
+            KillerTable::add_move(tt_cell->move, depth);
+            leaves++;
             return { tt_cell->move, tt_cell->score };
         }
     }
     Move priority_move = tt_hit ? tt_cell->move : Move();
 
-    // Quiescence: at nega_max leaf.
+    // Null-Move Heuristic
 
-    if (depth == 0) {
-        I16 score = quiesce<Color>(b, ctx, alpha, beta);
-        return { Move(), score };
+    U64 checks = b.get_checks<Color>();
+    I16 static_eval = (turn ? 1 : -1) * Evaluate::pestos(b);
+
+    bool has_piece_req = (
+        b.get_bitboard(Color::ALL) != (
+            b.get_bitboard(Color::PAWN)
+            | b.get_bitboard(Color::KING)
+        )
+    );
+    bool has_static_req = static_eval > beta;
+    bool has_depth_req = depth >= NULL_DEPTH_REDUCTION;
+    bool try_null_move = has_depth_req & has_piece_req & (checks == 0ULL) & has_static_req;
+
+    if (try_null_move) {
+        Context new_ctx = ctx;
+        new_ctx.toggle_hash_turn();
+        new_ctx.en_passant = 0;
+        MoveScore null_best = (
+            turn ? nega_max<Black>(b, new_ctx, depth - NULL_DEPTH_REDUCTION, -beta, -alpha)
+                 : nega_max<White>(b, new_ctx, depth - NULL_DEPTH_REDUCTION, -beta, -alpha)
+        );
+        null_best.score *= -1;
+        new_ctx.toggle_hash_turn();
+
+        if (null_best.score >= beta) {
+            leaves++;
+            return { Move(), beta }; // eval after not moving
+        }
     }
 
     // Tests Moves.
 
     MoveList ml;
-    b.gen_moves<Color, Gen::PSEUDOS>(ml, ctx, priority_move, depth);
+    b.gen_order_moves<Color, Gen::PSEUDOS>(ml, ctx, priority_move, depth);
 
     MoveScore best = { Move(), -INFINITY };
     I16 legal_move_count = 0;
@@ -88,8 +125,9 @@ MoveScore Search::nega_max(
     // Checkmate or Stalemate.
 
     if (legal_move_count == 0) {
+        leaves++;
         I16 score = b.get_checks<Color>() ? -INFINITY : 0;
-        best = { Move(), score };
+        return { Move(), score };
     }
 
     // TT-update: with new result.
@@ -125,14 +163,12 @@ MoveScore Search::nega_scout(
     auto [ tt_hit, tt_cell ] = TranspositionTable::get_cell(ctx.hash, depth);
     if (tt_hit && tt_cell->get_depth() >= depth) {
         switch (tt_cell->node_type) {
-            case NodeType::EXACT: return { tt_cell->move, tt_cell->score };
-            case NodeType::LOWER: alpha = std::max(alpha, tt_cell->score);
-            case NodeType::UPPER: beta  = std::min(beta,  tt_cell->score);
+            case TranspositionTable::NodeType::EXACT: return { tt_cell->move, tt_cell->score };
+            case TranspositionTable::NodeType::LOWER: alpha = std::max(alpha, tt_cell->score);
+            case TranspositionTable::NodeType::UPPER: beta  = std::min(beta,  tt_cell->score);
         }
         if (alpha >= beta) return { tt_cell->move, tt_cell->score };
     }
-    tt_hits += tt_hit;
-    tt_misses += !tt_hit;
     Move priority_move = tt_hit ? tt_cell->move : Move();
 
     // Quiescence: at nega_max leaf.

@@ -30,7 +30,7 @@ struct Move {
     U64 get_from_bit();
     U64 get_to_bit();
 
-    template<class Color> void set_score_capt(void* b, Move& priority, U16 depth);
+    template<class Color, Gen Gn> void set_score_capt(void* b, Move& priority, U16 depth);
     U32 get_move_score(Piece pc, Piece capt, Flag flag, U16 depth, Move& priority);
     U32 get_capture_score(Piece pc, Piece capt, Flag flag, U16 depth, Move& priority);
     U32 get_quiet_score(Piece pc, Flag flag, U16 depth, Move& priority);

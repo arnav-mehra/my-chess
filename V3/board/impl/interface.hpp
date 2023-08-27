@@ -160,10 +160,8 @@ void play_moves(
         );
 
         MoveList ml = MoveList();
-        if (turn) b.gen_moves<White, Gen::PSEUDOS>(ml, ctx);
-             else b.gen_moves<Black, Gen::PSEUDOS>(ml, ctx);
-        if (turn) ml.fill_moves<White>(&b);
-             else ml.fill_moves<Black>(&b);
+        if (turn) b.gen_order_moves<White, Gen::PSEUDOS>(ml, ctx);
+             else b.gen_order_moves<Black, Gen::PSEUDOS>(ml, ctx);
 
         U8 from = string_to_square_num(s[0], s[1]);
         U8 to   = string_to_square_num(s[2], s[3]);
@@ -275,8 +273,8 @@ void CLI() {
             std::string type; std::cin >> type;
             std::string ln; std::getline(std::cin, ln); // eat args
             
-            auto [ move, score ] = turn ? Search::search<White>(b, ctx, 20)
-                                        : Search::search<Black>(b, ctx, 20);
+            auto [ move, score ] = turn ? Search::search<White>(b, ctx, MAX_DEPTH)
+                                        : Search::search<Black>(b, ctx, MAX_DEPTH);
             best_move = move;
 
             if (type.compare("infinite") == 0) {
@@ -309,10 +307,8 @@ void CLI() {
             }
             if (type.compare("movelist") == 0) {
                 MoveList ml;
-                if (turn) b.gen_moves<White, Gen::PSEUDOS>(ml, ctx);
-                     else b.gen_moves<Black, Gen::PSEUDOS>(ml, ctx);
-                if (turn) ml.fill_moves<White>(&b);
-                     else ml.fill_moves<Black>(&b);
+                if (turn) b.gen_order_moves<White, Gen::PSEUDOS>(ml, ctx);
+                     else b.gen_order_moves<Black, Gen::PSEUDOS>(ml, ctx);
                 
                 ml.print();
             }

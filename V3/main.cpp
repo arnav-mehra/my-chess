@@ -16,6 +16,7 @@ using namespace std;
 
 static Board b;
 
+U16 depth = 9;
 string testing_fen[] = {
     "startpos",
     "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
@@ -31,8 +32,6 @@ int main(int argc, char** argv) {
     // CLI();
 
     time_fn([]() {
-        U16 depth = 9;
-
         for (string& fen : testing_fen) {
             bool turn;
             Context ctx = b.from_fen(fen, turn);
@@ -41,34 +40,25 @@ int main(int argc, char** argv) {
             // if (turn) Perft::run<White>(b, ctx, depth);
             //      else Perft::run<Black>(b, ctx, depth);
         }
-
-        // std::cout << "tt hits: " << Search::tt_hits << "\n";
-        // std::cout << "tt partials: " << Search::tt_partials << "\n";
-        // std::cout << "tt misses: " << Search::tt_misses << "\n";
-        float bf = (Search::nodes + 0.0) / (Search::nodes - Search::leaves + 0.0);
-        std::cout << "branching factor: " << bf << "\n";
-        std::cout << "killers: " << KillerTable::hits
-                  << " / " << KillerTable::misses
-                  << " = " << (KillerTable::hits + 0.0) / (KillerTable::misses + 0.0)
-                  << "\n";
     });
 
-    // play_moves(moves, b, ctx, turn);
-    // b.print();
-    // cout << "turn: " << turn << '\n';
-    // ctx.print();
+    // float bf = (Search::nodes + 0.0) / (Search::nodes - Search::leaves + 0.0);
+    U64 num = 0, den = 0;
+    for (int i = 0; i <= depth; i++) {
+        if (i != depth) num += Search::node_depth_hist[i];
+        if (i != 0) den += Search::node_depth_hist[i];
+    }
+    std::cout << "\nnodes:\t"  << Search::nodes
+              << "\nleaves:\t" << Search::leaves
+              << "\nbf:\t" << (num + 0.0) / (den + 0.0)
+              << "\n";
 
-    // MoveList ml;
-    // b.gen_moves<White, Gen::PSEUDOS>(ml, ctx);
-    // ml.fill_moves(&b, 0);
-    // ml.print();
+    std::cout << "\nkiller hits:\t"   << KillerTable::hits
+              << "\nkiller misses:\t" << KillerTable::misses
+              << "\nkiller hitrate:\t"  << (KillerTable::hits + 0.0) / (KillerTable::hits + KillerTable::misses + 0.0)
+              << "\n";
 
-    // std::cout << "move: " << ml[38].to_string() << '\n';
-    // std::cout << "before\n";
-    // b.assert_board_consistency();
-    // b.do_move<White>(ml[38], ctx);
-    // std::cout << "after\n";
-    // b.assert_board_consistency();
-    // auto [ eval, move ] = turn ? Search::search<White>(b, ctx, 8)
-    //                            : Search::search<Black>(b, ctx, 8);
+    std::cout << "\ntt hits:\t"     << TranspositionTable::hits
+              << "\ntt misses:\t"   << TranspositionTable::misses
+              << "\ntt hitrate:\t"   << (TranspositionTable::hits + 0.0) / (TranspositionTable::hits + TranspositionTable::misses + 0.0);
 }

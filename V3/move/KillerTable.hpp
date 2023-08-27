@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Move.hpp"
 
 #include <array>
@@ -7,7 +9,6 @@
 constexpr bool USE_KILLER_TABLE = true;
 
 namespace KillerTable {
-    constexpr size_t MAX_DEPTH = 32;
     constexpr size_t SLOTS = 2;
 
     U64 hits = 0;
@@ -21,8 +22,11 @@ namespace KillerTable {
         if constexpr (!USE_KILLER_TABLE) return false;
 
         U32 target = m.get_masked();
-        bool is_hit = (table[depth][0] == target)
-                    | (table[depth][1] == target);
+        bool is_hit = false;
+        for (int i = 0; i < SLOTS; i++) {
+            is_hit |= (table[depth][i] == target);
+        }
+
         hits += is_hit;
         misses += !is_hit;
         return is_hit;

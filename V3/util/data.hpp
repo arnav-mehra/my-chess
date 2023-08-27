@@ -6,6 +6,7 @@
 #define NUM_SQUARES 64
 #define NUM_BITBOARDS 16
 #define MAX_NUM_MOVES 216
+#define MAX_DEPTH 40
 
 U64 NON_LEFT_PIECES = 0xfefefefefefefefe;
 U64 NON_RIGHT_PIECES = 0x7f7f7f7f7f7f7f7f;

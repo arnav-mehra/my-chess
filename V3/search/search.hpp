@@ -9,17 +9,17 @@
 
 #define INFINITY INT16_MAX
 
-class Search {
-public:
+namespace Search {
+
+    // constants
+
+    constexpr U16 NULL_DEPTH_REDUCTION = 3;
 
     // stats
 
-    static U64 leaves;
-    static U64 nodes;
-
-    static U64 tt_hits;
-    static U64 tt_partials;
-    static U64 tt_misses;
+    U64 leaves = 0;
+    U64 nodes = 0;
+    U64 node_depth_hist[MAX_DEPTH] = {};
 
     // search
 
@@ -30,12 +30,10 @@ public:
         U16 depth
     );
 
-private:
-
     // mini-max searches
 
     template<class Color>
-    static MoveScore nega_max(
+    MoveScore nega_max(
         Board& b,
         Context& ctx,
         U16 depth,
@@ -44,7 +42,7 @@ private:
     );
 
     template<class Color>
-    static MoveScore nega_scout(
+    MoveScore nega_scout(
         Board& b,
         Context& ctx,
         U16 depth,
@@ -53,16 +51,10 @@ private:
     );
 
     template<class Color>
-    static I16 quiesce(
+    I16 quiesce(
         Board& b,
         Context& ctx,
         I16 alpha,
         I16 beta
     );
 };
-
-U64 Search::leaves = 0;
-U64 Search::nodes = 0;
-U64 Search::tt_hits = 0;
-U64 Search::tt_partials = 0;
-U64 Search::tt_misses = 0;

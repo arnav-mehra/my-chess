@@ -55,8 +55,12 @@ public:
     // gen_moves.hpp
 
     template<class Color, Gen> void gen_moves(MoveList&, Context&);
-    template<class Color, Gen> void gen_moves(MoveList&, Context&, U16 depth);
-    template<class Color, Gen> void gen_moves(MoveList&, Context&, Move&, U16 depth);
+    template<class Color, Gen> void gen_order_moves(
+        MoveList&,
+        Context&,
+        Move = Move(),
+        U16 depth = 0
+    );
 
     // do_move.hpp && undo_move.hpp
 

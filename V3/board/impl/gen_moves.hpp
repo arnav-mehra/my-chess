@@ -166,24 +166,13 @@ void Board::gen_moves(MoveList& moves, Context& ctx) {
 }
 
 template<class Color, Gen Gn>
-void Board::gen_moves(
+void Board::gen_order_moves(
     MoveList& ml,
     Context& ctx,
+    Move priority_move,
     U16 depth
 ) {
     this->gen_moves<Color, Gn>(ml, ctx);
-    ml.fill_moves<Color>(this, depth, Move());
-    ml.sort();
-}
-
-template<class Color, Gen Gn>
-void Board::gen_moves(
-    MoveList& ml,
-    Context& ctx,
-    Move& priority_move,
-    U16 depth
-) {
-    this->gen_moves<Color, Gn>(ml, ctx);
-    ml.fill_moves<Color>(this, depth, priority_move);
+    ml.fill_moves<Color, Gn>(this, depth, priority_move);
     ml.sort();
 }
