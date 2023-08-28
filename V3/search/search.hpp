@@ -30,7 +30,9 @@ namespace Search {
     static MoveScore search(
         Board& b,
         Context& ctx,
-        U16 depth
+        U16 depth,
+        double time_left,
+        double increment
     );
 
     // mini-max searches
