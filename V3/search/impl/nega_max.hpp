@@ -29,51 +29,56 @@ MoveScore Search::nega_max(
 
     // TT-lookup: to adjust bounds and get priority move.
 
-    auto [ tt_hit, tt_cell ] = TranspositionTable::get_cell(ctx.hash, depth);
-    if (tt_hit & (tt_cell->get_depth() >= depth)) {
-        switch (tt_cell->node_type) {
-            case TranspositionTable::NodeType::EXACT: {
-                return { tt_cell->move, tt_cell->score };
-            }
-            case TranspositionTable::NodeType::LOWER: alpha = std::max(alpha, tt_cell->score);
-            case TranspositionTable::NodeType::UPPER: beta  = std::min(beta,  tt_cell->score);
-        }
-        if (alpha >= beta) {
-            KillerTable::add_move(turn, tt_cell->move, depth);
-            return { tt_cell->move, tt_cell->score };
-        }
-    }
-    Move priority_move = tt_hit ? tt_cell->move : Move();
+    // auto [ tt_hit, tt_cell ] = TranspositionTable::get_cell(ctx.hash, depth);
+    // if (tt_hit & (tt_cell->get_depth() >= depth)) {
+    //     switch (tt_cell->node_type) {
+    //         case TranspositionTable::NodeType::EXACT: {
+    //             return { tt_cell->move, tt_cell->score };
+    //         }
+    //         case TranspositionTable::NodeType::LOWER: alpha = std::max(alpha, tt_cell->score);
+    //         case TranspositionTable::NodeType::UPPER: beta  = std::min(beta,  tt_cell->score);
+    //     }
+    //     if (alpha >= beta) {
+    //         KillerTable::add_move(turn, tt_cell->move, depth);
+    //         return { tt_cell->move, tt_cell->score };
+    //     }
+    // }
+    Move priority_move = Move();
 
     // Null-Move Heuristic
 
-    U64 checks = b.get_checks<Color>();
-    I16 static_eval = (turn ? 1 : -1) * Evaluate::pestos(b);
+    if ((!in_null_search) & (depth >= NULL_DEPTH_REDUCTION)) {
+        U64 no_checks = b.get_checks<Color>() == 0ULL;
+        I16 static_eval = (turn ? 1 : -1) * Evaluate::pestos(b);
 
-    bool has_piece_req = (
-        b.get_bitboard(Color::ALL) != (
-            b.get_bitboard(Color::PAWN)
-            | b.get_bitboard(Color::KING)
-        )
-    );
-    bool has_static_req = static_eval > beta;
-    bool has_depth_req = depth >= NULL_DEPTH_REDUCTION;
-    bool try_null_move = has_depth_req & has_piece_req & (checks == 0ULL) & has_static_req;
-
-    if (try_null_move) {
-        Context new_ctx = ctx;
-        new_ctx.toggle_hash_turn();
-        new_ctx.en_passant = 0;
-        MoveScore null_best = (
-            turn ? nega_max<Black>(b, new_ctx, depth - NULL_DEPTH_REDUCTION, -beta, -alpha)
-                 : nega_max<White>(b, new_ctx, depth - NULL_DEPTH_REDUCTION, -beta, -alpha)
+        bool has_piece_req = (
+            b.get_bitboard(Color::ALL) != (
+                b.get_bitboard(Color::PAWN)
+                | b.get_bitboard(Color::KING)
+            )
         );
-        null_best.score *= -1;
-        new_ctx.toggle_hash_turn();
+        bool has_static_req = static_eval > beta;
 
-        if (null_best.score >= beta) {
-            return { Move(), beta }; // eval after not moving
-        }
+        if (has_piece_req & no_checks & has_static_req) {
+            in_null_search = true;
+            null_searches++;
+
+            Context new_ctx = ctx;
+            new_ctx.toggle_hash_turn();
+            new_ctx.en_passant = 0;
+            MoveScore null_best = (
+                turn ? nega_max<Black>(b, new_ctx, depth - NULL_DEPTH_REDUCTION, -beta, -alpha)
+                     : nega_max<White>(b, new_ctx, depth - NULL_DEPTH_REDUCTION, -beta, -alpha)
+            );
+            null_best.score *= -1;
+
+            in_null_search = false;
+
+            if (null_best.score >= beta) {
+                null_cutoffs++;
+                return { Move(), beta }; // eval after not moving
+            }
+        }   
     }
 
     // Tests Moves.
@@ -126,10 +131,10 @@ MoveScore Search::nega_max(
 
     // TT-update: with new result.
 
-    TranspositionTable::set_cell(
-        tt_cell, ctx.hash, depth,
-        best, og_alpha, beta
-    );
+    // TranspositionTable::set_cell(
+    //     tt_cell, ctx.hash, depth,
+    //     best, og_alpha, beta
+    // );
 
     return best;
 }
