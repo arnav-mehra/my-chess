@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <stack>
 
 #define MAX_FEN_BOARD_LENGTH 90
@@ -271,19 +272,33 @@ void CLI() {
             continue;
         }
         if (s.compare("go") == 0) {
-            std::string type; std::cin >> type;
             std::string ln; std::getline(std::cin, ln); // eat args
-            
-            auto [ move, score ] = turn ? Search::search<White>(b, ctx, MAX_DEPTH)
-                                        : Search::search<Black>(b, ctx, MAX_DEPTH);
-            best_move = move;
+            std::stringstream ss(ln);
 
-            if (type.compare("infinite") == 0) {
-                continue; // wait for stop cmd
+            int wtime = 900000, winc = 0, btime = 900000, binc = 0;
+            int movestogo = 50;
+            int depth = MAX_DEPTH;
+            int nodes, mate, movetime; // don't care about these
+            bool is_infinite = false;
+
+            while (ss.rdbuf()->in_avail() >= 4) {
+                std::string cmd; ss >> cmd;
+                if      (cmd.compare("wtime")     == 0) ss >> wtime;
+                else if (cmd.compare("btime")     == 0) ss >> btime;
+                else if (cmd.compare("winc")      == 0) ss >> winc;
+                else if (cmd.compare("binc")      == 0) ss >> binc;
+                else if (cmd.compare("movestogo") == 0) ss >> movestogo;
+                else if (cmd.compare("depth")     == 0) ss >> depth;
+                else if (cmd.compare("nodes")     == 0) ss >> nodes;
+                else if (cmd.compare("mate")      == 0) ss >> mate;
+                else if (cmd.compare("movetime")  == 0) ss >> movetime;
+                else if (cmd.compare("infinite")  == 0) is_infinite = true;
             }
-            else {
-                play_best_move(b, ctx, turn, best_move);
-            }
+
+            auto [ move, score ] = turn ? Search::search<White>(b, ctx, depth, wtime / 1000.0, winc / 1000.0)
+                                        : Search::search<Black>(b, ctx, depth, btime / 1000.0, binc / 1000.0);
+            best_move = move;
+            if (!is_infinite) play_best_move(b, ctx, turn, move);
         }
         if (s.compare("stop") == 0) {
             play_best_move(b, ctx, turn, best_move);

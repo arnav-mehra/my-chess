@@ -75,6 +75,8 @@
         "future": "cpp",
         "mutex": "cpp",
         "stop_token": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "coroutine": "cpp",
+        "resumable": "cpp"
     }
 }

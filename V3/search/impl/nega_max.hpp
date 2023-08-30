@@ -16,6 +16,10 @@ MoveScore Search::nega_max(
     node_depth_hist[depth]++;
     negamax_nodes++;
 
+    if (stop_search) {
+        return { Move(), 0 };
+    }
+
     if (DrawTable::is_draw()) {
         return { Move(), 0 };
     }
@@ -47,7 +51,7 @@ MoveScore Search::nega_max(
 
     // Null-Move Heuristic
 
-    if ((!in_null_search) & (depth >= NULL_DEPTH_REDUCTION)) {
+    if (depth >= NULL_DEPTH_REDUCTION) {
         U64 no_checks = b.get_checks<Color>() == 0ULL;
         I16 static_eval = (turn ? 1 : -1) * Evaluate::pestos(b);
 
@@ -60,6 +64,10 @@ MoveScore Search::nega_max(
         bool has_static_req = static_eval > beta;
 
         if (has_piece_req & no_checks & has_static_req) {
+            int bound = (int)beta - (in_null_search ? 20 : 0);
+            I16 b1 = (I16)std::clamp(-bound, -INFINITY, INFINITY);
+            I16 b2 = (I16)std::clamp(1 - bound, -INFINITY, INFINITY);
+
             in_null_search = true;
             null_searches++;
 
@@ -67,8 +75,8 @@ MoveScore Search::nega_max(
             new_ctx.toggle_hash_turn();
             new_ctx.en_passant = 0;
             MoveScore null_best = (
-                turn ? nega_max<Black>(b, new_ctx, depth - NULL_DEPTH_REDUCTION, -beta, -alpha)
-                     : nega_max<White>(b, new_ctx, depth - NULL_DEPTH_REDUCTION, -beta, -alpha)
+                turn ? nega_max<Black>(b, new_ctx, depth - NULL_DEPTH_REDUCTION, b1, b2)
+                     : nega_max<White>(b, new_ctx, depth - NULL_DEPTH_REDUCTION, b1, b2)
             );
             null_best.score *= -1;
 

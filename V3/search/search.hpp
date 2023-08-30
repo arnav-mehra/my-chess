@@ -6,6 +6,7 @@
 #include "../board/TranspositionTable.hpp"
 #include <algorithm>
 #include <unordered_set>
+#include <atomic>
 
 #define INFINITY INT16_MAX
 
@@ -22,17 +23,19 @@ namespace Search {
     U64 negamax_nodes = 0;
     U64 null_cutoffs = 0;
     U64 null_searches = 0;
-    bool in_null_search = false;
 
     // search
+
+    bool in_null_search = false;
+    std::atomic<bool> stop_search = false;
 
     template<class Color>
     static MoveScore search(
         Board& b,
         Context& ctx,
         U16 depth,
-        double time_left,
-        double increment
+        double time_left = 900.0,
+        double increment = 0.0
     );
 
     // mini-max searches
